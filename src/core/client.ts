@@ -8,22 +8,16 @@ export interface ClientConfiguration {
 
 export type ApiCaller = (query: string, variables?: { [key: string]: string | number }) => Promise<any>;
 
-export class Client {
-    private _configuration: ClientConfiguration;
+export interface ClientInterface {
+    catalogueApi: ApiCaller;
+    searchApi: ApiCaller;
+    orderApi: ApiCaller;
+    subscriptionApi: ApiCaller;
+    pimApi: ApiCaller;
+}
 
-    constructor() {
-        this._configuration = {
-            tenantIdentifier: process.env.CRYSTALLIZE_TENANT_IDENTIFIER || '',
-            accessTokenId: process.env.CRYSTALLIZE_ACCESS_TOKEN_ID || '',
-            accessTokenSecret: process.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET || '',
-        };
-    }
-    public set configuration(value: ClientConfiguration) {
-        this._configuration = value;
-    }
-
-    private _createApiCaller(uri: string): ApiCaller {
-        const configuration = this._configuration;
+export function createClient(configuration: ClientConfiguration) {
+    function createApiCaller(uri: string): ApiCaller {
         return async function callApi(query: string, variables?: { [key: string]: string | number }): Promise<any> {
             const response = await fetch(uri, {
                 method: "POST",
@@ -42,23 +36,11 @@ export class Client {
         };
     }
 
-    public get catalogueApi(): ApiCaller {
-        return this._createApiCaller(`https://api.crystallize.com/${this._configuration.tenantIdentifier}/catalogue`);
-    }
-
-    public get searchApi(): ApiCaller {
-        return this._createApiCaller(`https://api.crystallize.com/${this._configuration.tenantIdentifier}/search`);
-    }
-
-    public get orderApi(): ApiCaller {
-        return this._createApiCaller(`https://api.crystallize.com/${this._configuration.tenantIdentifier}/orders`);
-    }
-
-    public get subscriptionApi(): ApiCaller {
-        return this._createApiCaller(`https://api.crystallize.com/${this._configuration.tenantIdentifier}/subscriptions`);
-    }
-
-    public get pimApi(): ApiCaller {
-        return this._createApiCaller(`https://pim.crystallize.com/graphql`);
+    return {
+        catalogueApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/catalogue`),
+        searchApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/search`),
+        orderApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/orders`),
+        subscriptionApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/subscriptions`),
+        pimApi: createApiCaller(`https://pim.crystallize.com/graphql`),
     }
 }

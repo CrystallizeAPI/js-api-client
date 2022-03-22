@@ -1,9 +1,10 @@
-const { CrystallizeClient } = require('../dist/index.js');
+const { createClient } = require('../dist/index.js');
 
 test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
-    CrystallizeClient.configuration = {
-        tenantIdentifier: 'furniture'
-    };
+
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture',
+    });
 
     const caller = CrystallizeClient.catalogueApi;
 
