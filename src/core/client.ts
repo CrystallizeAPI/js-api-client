@@ -6,7 +6,7 @@ export interface ClientConfiguration {
     accessTokenSecret?: string;
 }
 
-export type ApiCaller = (query: string, variables?: { [key: string]: string }) => Promise<any>;
+export type ApiCaller = (query: string, variables?: { [key: string]: string | number }) => Promise<any>;
 
 export class Client {
     private _configuration: ClientConfiguration;
@@ -24,7 +24,7 @@ export class Client {
 
     private _createApiCaller(uri: string): ApiCaller {
         const configuration = this._configuration;
-        return async function callApi(query: string, variables?: { [key: string]: string }): Promise<any> {
+        return async function callApi(query: string, variables?: { [key: string]: string | number }): Promise<any> {
             const response = await fetch(uri, {
                 method: "POST",
                 headers: {
