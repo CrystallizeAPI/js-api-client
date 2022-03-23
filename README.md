@@ -8,17 +8,17 @@ If you want to report or contribute, you should do it on the main repository: ht
 
 ---
 
-## Description 
+## Description
 
 This is a simple client to communicate with Crystallize API.
 
 It exposes a `CrystallizeClient` on which you can get:
 
-- catalogueApi
-- searchApi
-- orderApi
-- subscriptionApi
-- pimApi
+-   catalogueApi
+-   searchApi
+-   orderApi
+-   subscriptionApi
+-   pimApi
 
 You can setup the credentials via `.configuration`
 
@@ -31,7 +31,6 @@ CrystallizeClient.configuration = {
 ## Usage
 
 ```javascript
-
 import { CrystallizeClient } from '@crystallize/js-api-client';
 
 export async function fetchSomething(): Promise<Something[]> {
@@ -39,5 +38,4 @@ export async function fetchSomething(): Promise<Something[]> {
     const response = await caller(graphQLQuery, variables);
     return response.data.catalogue;
 }
-
 ```

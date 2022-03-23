@@ -4,13 +4,8 @@
         "outDir": "./dist",
         "declaration": true,
         "declarationDir": "./dist/types",
-        "lib": [
-            "es2021",
-            "DOM"
-        ],
-        "sourceMap": true,
+        "lib": ["es2021", "DOM"],
+        "sourceMap": true
     },
-    "include": [
-        "./src/**/*"
-    ]
+    "include": ["./src/**/*"]
 }

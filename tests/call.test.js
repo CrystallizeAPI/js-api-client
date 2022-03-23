@@ -1,9 +1,8 @@
 const { createClient } = require('../dist/index.js');
 
 test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
-
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture',
+        tenantIdentifier: 'furniture'
     });
 
     const caller = CrystallizeClient.catalogueApi;
@@ -16,10 +15,8 @@ test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
                 }
             }`;
     const response = await caller(query, {
-        "language": "en",
-        "path": "/shop/chairs/bamboo-chair"
+        language: 'en',
+        path: '/shop/chairs/bamboo-chair'
     });
-    expect(response.data.catalogue.name).toBe("Bamboo Chair");
-
+    expect(response.data.catalogue.name).toBe('Bamboo Chair');
 });
-
