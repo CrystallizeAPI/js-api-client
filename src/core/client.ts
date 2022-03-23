@@ -28,7 +28,8 @@ export function createClient(configuration: ClientConfiguration) {
             const response = await fetch(uri, {
                 method: 'POST',
                 headers: {
-                    'content-type': 'application/json',
+                    'Content-type': 'application/json',
+                    Accept: 'application/json',
                     'X-Crystallize-Access-Token-Id':
                         configuration.accessTokenId || '',
                     'X-Crystallize-Access-Token-Secret':
