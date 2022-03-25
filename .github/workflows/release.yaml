@@ -1,7 +1,7 @@
 on:
     push:
         tags:
-            - 'v*'
+            - '*'
 
 name: Release a New Version
 
@@ -39,6 +39,7 @@ jobs:
                   prerelease: false
 
             - name: 📢 Publish to NPM
-              run: yarn publish
+              run: yarn publish --new-version ${GITHUB_REF#"refs/tags/"} --no-git-tag-version
               env:
+                  NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
