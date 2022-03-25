@@ -3,7 +3,7 @@
         "watch": "yarn tsc -W",
         "build": "yarn tsc",
         "test": "jest",
-        "bump": "yarn tsc && yarn version --new-version"
+        "bump": "yarn tsc && yarn version --no-git-tag-version --new-version"
     },
     "main": "dist/index.js",
     "types": "dist/types/index.d.ts",
@@ -25,5 +25,5 @@
     },
     "license": "MIT",
     "name": "@crystallize/js-api-client",
-    "version": "0.0.2"
+    "version": "0.0.3"
 }

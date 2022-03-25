@@ -1,0 +1,44 @@
+on:
+    push:
+        tags:
+            - 'v*'
+
+name: Release a New Version
+
+jobs:
+    releaseandpublish:
+        name: Release on Github and Publish on NPM
+        runs-on: ubuntu-latest
+        steps:
+            - name: ⬇️ Checkout repo
+              uses: actions/checkout@v3
+
+            - name: ⎔ Setup node
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 16
+                  cache: 'yarn'
+                  registry-url: 'https://registry.npmjs.org'
+                  cache-dependency-path: components/*/yarn.lock
+                  scope: '@crystallize'
+
+            - name: 📥 Download deps
+              run: yarn install
+
+            - name: 🏄 Run the tests
+              run: yarn build && yarn test
+
+            - name: 🏷 Create Release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ github.ref }}
+                  release_name: Release ${{ github.ref }}
+                  draft: false
+                  prerelease: false
+
+            - name: 📢 Publish to NPM
+              run: yarn publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
