@@ -6,42 +6,61 @@ export interface ClientConfiguration {
     accessTokenSecret?: string;
 }
 
-export type ApiCaller = (
+type variablesType = { [key: string]: string | number };
+
+type ApiCaller<T, E, Z> = (
     query: string,
-    variables?: { [key: string]: string | number }
-) => Promise<any>;
+    variables?: variablesType
+) => Promise<T | E | Z>;
 
 export interface ClientInterface {
-    catalogueApi: ApiCaller;
-    searchApi: ApiCaller;
-    orderApi: ApiCaller;
-    subscriptionApi: ApiCaller;
-    pimApi: ApiCaller;
+    catalogueApi: ApiCaller<any, any, string>;
+    searchApi: ApiCaller<any, any, string>;
+    orderApi: ApiCaller<any, any, string>;
+    subscriptionApi: ApiCaller<any, any, string>;
+    pimApi: ApiCaller<any, any, string>;
+}
+
+async function post<T, E, Z>(
+    path: string,
+    config: ClientConfiguration,
+    query: string,
+    variables?: variablesType,
+    init?: RequestInit
+): Promise<T | E | Z> {
+    try {
+        const response = await fetch(path, {
+            ...init,
+            method: 'POST',
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+                Accept: 'application/json',
+                'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
+                'X-Crystallize-Access-Token-Secret':
+                    config.accessTokenSecret || ''
+            },
+            body: JSON.stringify({ query, variables })
+        });
+
+        if (response.ok && 204 === response.status) {
+            return <T>{};
+        }
+        if (!response.ok) {
+            return <E>(await response.json()).errors;
+        }
+        return <T>(await response.json()).data;
+    } catch (exception) {
+        return <Z>exception;
+    }
 }
 
 export function createClient(configuration: ClientConfiguration) {
-    function createApiCaller(uri: string): ApiCaller {
-        return async function callApi(
+    function createApiCaller(uri: string): ApiCaller<any, any, string> {
+        return async function callApi<T, E, Z>(
             query: string,
-            variables?: { [key: string]: string | number }
-        ): Promise<any> {
-            const response = await fetch(uri, {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    Accept: 'application/json',
-                    'X-Crystallize-Access-Token-Id':
-                        configuration.accessTokenId || '',
-                    'X-Crystallize-Access-Token-Secret':
-                        configuration.accessTokenSecret || ''
-                },
-                body: JSON.stringify({ query, variables })
-            });
-            const json = await (<any>response.json());
-            if (json.errors) {
-                console.log(JSON.stringify(json.errors, null, 2));
-            }
-            return json;
+            variables?: variablesType
+        ): Promise<T | E | Z> {
+            return post<T, E, Z>(uri, configuration, query, variables);
         };
     }
 

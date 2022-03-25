@@ -20,12 +20,14 @@ It exposes a `CrystallizeClient` on which you can get:
 -   subscriptionApi
 -   pimApi
 
-You can setup the credentials via `.configuration`
+You can create your own client to provide a specific `configuration`
 
 ```javascript
-CrystallizeClient.configuration = {
+import { createClient } from '@crystallize/js-api-client';
+
+export const CrystallizeClient = createClient({
     tenantIdentifier: 'furniture'
-};
+});
 ```
 
 ## Usage
@@ -36,6 +38,6 @@ import { CrystallizeClient } from '@crystallize/js-api-client';
 export async function fetchSomething(): Promise<Something[]> {
     const caller = CrystallizeClient.catalogueApi;
     const response = await caller(graphQLQuery, variables);
-    return response.data.catalogue;
+    return response.catalogue;
 }
 ```
