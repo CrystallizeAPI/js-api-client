@@ -9,7 +9,7 @@
     "types": "dist/types/index.d.ts",
     "devDependencies": {
         "@tsconfig/node16": "^1.0.2",
-        "@types/node": "^17.0.14",
+        "@types/node": "^17.0.23",
         "@types/node-fetch": "^2",
         "jest": "^27.5.1"
     },
