@@ -10,9 +10,144 @@ If you want to report or contribute, you should do it on the main repository: ht
 
 ## Description
 
+This lib provides simplifications / helpers to easily fetch data from your tenant.
+
+-   [Navigation Tree Fetcher](#Navigation-Tree-Fetcher)
+-   [Simple Client](#Client)
+
+## Navigation Tree Fetcher
+
+> Note: This helper uses `children` property and is therefore not paginate. You have to take this into account.
+
+In Crystallize your items are organized like a tree, a graph, it's hierarchical.
+It's very common that you will want to build the navigation of your website following the tree.
+
+The `Navigation Tree Fetcher` does the heaving lifting for you.
+
+```javascript
+const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const response = await fetch('/', 'en', 3);
+```
+
+This will trigger the following query:
+
+```graqhql
+      query ($language: String!, $path: String!) {
+          navigationTree: catalogue (language: $language, path: $path) {
+              name
+              path
+              level1: children {
+                  name
+                  path
+                  level2: children {
+                      name
+                      path
+                  }
+              }
+          }
+      }
+```
+
+You might want more, so you can pass a first parameter like this:
+
+```javascript
+const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const response = await fetch('/', 'en', 2, {
+    tenant: {
+        __args: {
+            language: 'en'
+        },
+        name: true
+    }
+});
+```
+
+This will trigger the following query:
+
+```graphql
+query ($language: String!, $path: String!) {
+    navigationTree: catalogue(language: $language, path: $path) {
+        name
+        path
+        level1: children {
+            name
+            path
+        }
+    }
+    tenant(language: "en") {
+        name
+    }
+}
+```
+
+> This is using the wonderful https://www.npmjs.com/package/json-to-graphql-query
+
+You can also customize what you want in each level:
+
+```javascript
+const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const response = await fetch(
+    '/',
+    'en',
+    3,
+    {
+        tenant: {
+            __args: {
+                language: 'en'
+            },
+            name: true
+        }
+    },
+    (level) => {
+        switch (level) {
+            case 0:
+                return {
+                    shape: {
+                        identifier: true
+                    }
+                };
+            case 1:
+                return {
+                    createdAt: true
+                };
+            default:
+                return {};
+        }
+    }
+);
+```
+
+would result:
+
+```graphql
+query ($language: String!, $path: String!) {
+    navigationTree: catalogue(language: $language, path: $path) {
+        name
+        path
+        shape {
+            name
+        }
+        level1: children {
+            name
+            path
+            createdAt
+            level2: children {
+                name
+                path
+            }
+        }
+    }
+    tenant(language: "en") {
+        name
+    }
+}
+```
+
+## Client
+
 This is a simple client to communicate with Crystallize API.
 
-It exposes a `CrystallizeClient` on which you can get:
+You can get:
 
 -   catalogueApi
 -   searchApi

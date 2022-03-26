@@ -1,0 +1,99 @@
+const {
+    createNavigationTreeFetcher,
+    createClient
+} = require('../dist/index.js');
+
+test('Test Nav fetching Node: Shop', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture'
+    });
+
+    const fetch = createNavigationTreeFetcher(CrystallizeClient);
+    const response = await fetch('/shop', 'en', 3);
+
+    expect(response.navigationTree.path).toBe('/shop');
+    expect(response.navigationTree.level1[0].path).toBe('/shop/decoration');
+    expect(response.navigationTree.level1[0].level2[0].path).toBe(
+        '/shop/decoration/shelves-in-wood'
+    );
+
+    expect(response.navigationTree.level1[1].path).toBe(
+        '/shop/bathroom-fitting'
+    );
+    expect(response.navigationTree.level1[1].level2[2].path).toBe(
+        '/shop/bathroom-fitting/mounted-bathroom-vanity-in-gray'
+    );
+});
+
+test('Test Nav fetching Node: /', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture'
+    });
+
+    const fetch = createNavigationTreeFetcher(CrystallizeClient);
+    const response = await fetch('/', 'en', 3);
+    expect(response.navigationTree.path).toBe('/');
+    expect(response.navigationTree.level1[0].path).toBe('/shop');
+});
+
+test('Test Nav fetching Node: / + extra data', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture'
+    });
+
+    const fetch = createNavigationTreeFetcher(CrystallizeClient);
+    const response = await fetch('/', 'en', 2, {
+        tenant: {
+            __args: {
+                language: 'en'
+            },
+            name: true
+        }
+    });
+    expect(response.navigationTree.path).toBe('/');
+    expect(response.navigationTree.level1[0].path).toBe('/shop');
+    expect(response.tenant.name).toBe('Furniture');
+});
+
+test('Test Nav fetching Node: / + extra data + specific level', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture'
+    });
+
+    const fetch = createNavigationTreeFetcher(CrystallizeClient);
+    const response = await fetch(
+        '/',
+        'en',
+        3,
+        {
+            tenant: {
+                __args: {
+                    language: 'en'
+                },
+                name: true
+            }
+        },
+        (level) => {
+            switch (level) {
+                case 0:
+                    return {
+                        shape: {
+                            identifier: true
+                        }
+                    };
+                case 1:
+                    return {
+                        createdAt: true
+                    };
+                default:
+                    return {};
+            }
+        }
+    );
+    expect(response.navigationTree.path).toBe('/');
+    expect(response.navigationTree.level1[0].path).toBe('/shop');
+    expect(response.tenant.name).toBe('Furniture');
+    expect(response.navigationTree.shape.identifier).toBe(
+        '__catalogue-tree-root'
+    );
+});

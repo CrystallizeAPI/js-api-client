@@ -5,6 +5,10 @@
         "test": "jest",
         "bump": "yarn tsc && yarn version --no-git-tag-version --new-version"
     },
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:CrystallizeAPI/js-api-client.git"
+    },
     "main": "dist/index.js",
     "types": "dist/types/index.d.ts",
     "devDependencies": {
@@ -19,6 +23,7 @@
     },
     "dependencies": {
         "dotenv": "^16.0.0",
+        "json-to-graphql-query": "^2.2.3",
         "node-fetch": "^2",
         "tiny-invariant": "^1.2.0",
         "typescript": "^4.6.3"
