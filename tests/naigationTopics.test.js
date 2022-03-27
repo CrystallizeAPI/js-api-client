@@ -1,5 +1,5 @@
 const {
-    createNavigationTopicFetcher,
+    createNavigationByTopicsFetcher,
     createClient
 } = require('../dist/index.js');
 
@@ -8,7 +8,7 @@ test('Test Nav fetching Topic: /', async () => {
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationTopicFetcher(CrystallizeClient);
+    const fetch = createNavigationByTopicsFetcher(CrystallizeClient);
     const response = await fetch('/', 'en', 3);
 
     // fetch topics returns a list of topics with no parents
@@ -22,7 +22,7 @@ test('Test Nav fetching Topic: /specials', async () => {
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationTopicFetcher(CrystallizeClient);
+    const fetch = createNavigationByTopicsFetcher(CrystallizeClient);
     const response = await fetch('/specials', 'en', 3);
 
     expect(response.tree.name).toBe('Specials');
@@ -35,7 +35,7 @@ test('Test Nav fetching Topic: /specials + extra data + specific level', async (
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationTopicFetcher(CrystallizeClient);
+    const fetch = createNavigationByTopicsFetcher(CrystallizeClient);
     const response = await fetch(
         '/specials',
         'en',

@@ -25,7 +25,7 @@ It's very common that you will want to build the navigation of your website foll
 These fetchers do the heaving lifting for you.
 
 ```javascript
-const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
 const response = await fetch('/', 'en', 3);
 ```
 
@@ -53,7 +53,7 @@ This will trigger the following query:
 You might want more, so you can pass a first parameter like this:
 
 ```javascript
-const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
 const response = await fetch('/', 'en', 2, {
     tenant: {
         __args: {
@@ -87,7 +87,7 @@ query ($language: String!, $path: String!) {
 You can also customize what you want in each level:
 
 ```javascript
-const fetch = createNavigationTreeFetcher(CrystallizeClient);
+const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
 const response = await fetch(
     '/',
     'en',

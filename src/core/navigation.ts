@@ -75,18 +75,18 @@ function buildQueryFor(type: NavigationType, path: string) {
     }
 }
 
-type TreeFetcher<T> = (
+export type TreeFetcher = (
     path: string,
     language: string,
     depth: number,
     extraQuery?: any,
     perLevel?: (currentLevel: number) => any
-) => Promise<T>;
+) => Promise<any>;
 
 function fetchTree<T>(
     client: ClientInterface,
     type: NavigationType
-): TreeFetcher<T> {
+): TreeFetcher {
     return <T>(
         path: string,
         language: string,
@@ -110,10 +110,10 @@ function fetchTree<T>(
     };
 }
 
-export function createNavigationTreeFetcher(client: ClientInterface) {
+export function createNavigationByFoldersFetcher(client: ClientInterface) {
     return fetchTree(client, NavigationType.Tree);
 }
 
-export function createNavigationTopicFetcher(client: ClientInterface) {
+export function createNavigationByTopicsFetcher(client: ClientInterface) {
     return fetchTree(client, NavigationType.Topics);
 }

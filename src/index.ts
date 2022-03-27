@@ -1,7 +1,7 @@
 export * from './core/client';
 export * from './core/navigation';
 import { createClient } from './core/client';
-import { createNavigationTreeFetcher } from './core/navigation';
+import { createNavigationByFoldersFetcher } from './core/navigation';
 
 export const CrystallizeClient = createClient({
     tenantIdentifier: process.env.CRYSTALLIZE_TENANT_IDENTIFIER || '',
@@ -10,4 +10,4 @@ export const CrystallizeClient = createClient({
 });
 
 export const CrystallizeNavigationTreeFetcher =
-    createNavigationTreeFetcher(CrystallizeClient);
+    createNavigationByFoldersFetcher(CrystallizeClient);
