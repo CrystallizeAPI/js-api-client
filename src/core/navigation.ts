@@ -1,6 +1,11 @@
 import { jsonToGraphQLQuery, VariableType } from 'json-to-graphql-query';
 import { ClientInterface } from './client';
 
+enum NavigationType {
+    Tree,
+    Topics
+}
+
 function nestedQuery(
     depth: number,
     start: number = 1,
@@ -18,39 +23,97 @@ function nestedQuery(
 
     return {
         ...props,
-        ['level' + start]: {
-            __aliasFor: 'children',
+        children: {
             ...nestedQuery(depth - 1, start + 1, extraQuery)
         }
     };
 }
 
-export function createNavigationTreeFetcher(client: ClientInterface) {
-    return async (
+function buildQueryFor(type: NavigationType, path: string) {
+    switch (type) {
+        case NavigationType.Tree:
+            return {
+                __variables: {
+                    language: 'String!',
+                    path: 'String!'
+                },
+                tree: {
+                    __aliasFor: 'catalogue',
+                    __args: {
+                        language: new VariableType('language'),
+                        path: new VariableType('path')
+                    }
+                }
+            };
+        case NavigationType.Topics:
+            if (path === '' || path === '/') {
+                return {
+                    __variables: {
+                        language: 'String!'
+                    },
+                    tree: {
+                        __aliasFor: 'topics',
+                        __args: {
+                            language: new VariableType('language')
+                        }
+                    }
+                };
+            }
+            return {
+                __variables: {
+                    language: 'String!',
+                    path: 'String!'
+                },
+                tree: {
+                    __aliasFor: 'topic',
+                    __args: {
+                        language: new VariableType('language'),
+                        path: new VariableType('path')
+                    }
+                }
+            };
+    }
+}
+
+type TreeFetcher<T> = (
+    path: string,
+    language: string,
+    depth: number,
+    extraQuery?: any,
+    perLevel?: (currentLevel: number) => any
+) => Promise<T>;
+
+function fetchTree<T>(
+    client: ClientInterface,
+    type: NavigationType
+): TreeFetcher<T> {
+    return <T>(
         path: string,
         language: string,
         depth: number = 1,
         extraQuery?: any,
         perLevel?: (currentLevel: number) => any
-    ): Promise<any> => {
+    ): Promise<T> => {
         const fetch = client.catalogueApi;
+        const baseQuery = buildQueryFor(type, path);
         const query = {
             query: {
-                __variables: {
-                    language: 'String!',
-                    path: 'String!'
-                },
-                navigationTree: {
-                    __aliasFor: 'catalogue',
-                    __args: {
-                        language: new VariableType('language'),
-                        path: new VariableType('path')
-                    },
+                ...baseQuery,
+                tree: {
+                    ...baseQuery.tree,
                     ...nestedQuery(depth, 1, perLevel)
                 },
                 ...(extraQuery !== undefined ? extraQuery : {})
             }
         };
-        return await fetch(jsonToGraphQLQuery(query), { language, path });
+        return fetch(jsonToGraphQLQuery(query), { language, path });
     };
+}
+
+export function createNavigationTreeFetcher(client: ClientInterface) {
+    return fetchTree(client, NavigationType.Tree);
+}
+
+export function createNavigationTopicFetcher(client: ClientInterface) {
+    return fetchTree(client, NavigationType.Topics);
 }

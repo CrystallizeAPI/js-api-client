@@ -15,31 +15,33 @@ This lib provides simplifications / helpers to easily fetch data from your tenan
 -   [Navigation Tree Fetcher](#Navigation-Tree-Fetcher)
 -   [Simple Client](#Client)
 
-## Navigation Tree Fetcher
+## Navigation (Tree or Topic) Fetcher
 
 > Note: This helper uses `children` property and is therefore not paginate. You have to take this into account.
 
-In Crystallize your items are organized like a tree, a graph, it's hierarchical.
-It's very common that you will want to build the navigation of your website following the tree.
+In Crystallize your Items or Topics are organized like a tree, a graph, it's hierarchical.
+It's very common that you will want to build the navigation of your website following the Content Tree or the Topic Tree.
 
-The `Navigation Tree Fetcher` does the heaving lifting for you.
+These fetchers do the heaving lifting for you.
 
 ```javascript
 const fetch = createNavigationTreeFetcher(CrystallizeClient);
 const response = await fetch('/', 'en', 3);
 ```
 
+> Note `createNavigationTopicsFetcher` works exactly the same but for topics. [Examples for Topics](./tests/naigationTopic.test.js), [Examples for Items](./tests/naigationTree.test.js)
+
 This will trigger the following query:
 
 ```graqhql
       query ($language: String!, $path: String!) {
-          navigationTree: catalogue (language: $language, path: $path) {
+          tree: catalogue (language: $language, path: $path) {
               name
               path
-              level1: children {
+              children {
                   name
                   path
-                  level2: children {
+                  children {
                       name
                       path
                   }
@@ -66,10 +68,10 @@ This will trigger the following query:
 
 ```graphql
 query ($language: String!, $path: String!) {
-    navigationTree: catalogue(language: $language, path: $path) {
+    tree: catalogue(language: $language, path: $path) {
         name
         path
-        level1: children {
+        children {
             name
             path
         }
@@ -121,17 +123,17 @@ would result:
 
 ```graphql
 query ($language: String!, $path: String!) {
-    navigationTree: catalogue(language: $language, path: $path) {
+    tree: catalogue(language: $language, path: $path) {
         name
         path
         shape {
             name
         }
-        level1: children {
+        children {
             name
             path
             createdAt
-            level2: children {
+            children {
                 name
                 path
             }

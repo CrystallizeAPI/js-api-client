@@ -56,7 +56,7 @@ async function post<T, E, Z>(
 
 export function createClient(configuration: ClientConfiguration) {
     function createApiCaller(uri: string): ApiCaller<any, any, string> {
-        return async function callApi<T, E, Z>(
+        return function callApi<T, E, Z>(
             query: string,
             variables?: variablesType
         ): Promise<T | E | Z> {

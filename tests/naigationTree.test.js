@@ -11,16 +11,14 @@ test('Test Nav fetching Node: Shop', async () => {
     const fetch = createNavigationTreeFetcher(CrystallizeClient);
     const response = await fetch('/shop', 'en', 3);
 
-    expect(response.navigationTree.path).toBe('/shop');
-    expect(response.navigationTree.level1[0].path).toBe('/shop/decoration');
-    expect(response.navigationTree.level1[0].level2[0].path).toBe(
+    expect(response.tree.path).toBe('/shop');
+    expect(response.tree.children[0].path).toBe('/shop/decoration');
+    expect(response.tree.children[0].children[0].path).toBe(
         '/shop/decoration/shelves-in-wood'
     );
 
-    expect(response.navigationTree.level1[1].path).toBe(
-        '/shop/bathroom-fitting'
-    );
-    expect(response.navigationTree.level1[1].level2[2].path).toBe(
+    expect(response.tree.children[1].path).toBe('/shop/bathroom-fitting');
+    expect(response.tree.children[1].children[2].path).toBe(
         '/shop/bathroom-fitting/mounted-bathroom-vanity-in-gray'
     );
 });
@@ -32,8 +30,8 @@ test('Test Nav fetching Node: /', async () => {
 
     const fetch = createNavigationTreeFetcher(CrystallizeClient);
     const response = await fetch('/', 'en', 3);
-    expect(response.navigationTree.path).toBe('/');
-    expect(response.navigationTree.level1[0].path).toBe('/shop');
+    expect(response.tree.path).toBe('/');
+    expect(response.tree.children[0].path).toBe('/shop');
 });
 
 test('Test Nav fetching Node: / + extra data', async () => {
@@ -50,8 +48,8 @@ test('Test Nav fetching Node: / + extra data', async () => {
             name: true
         }
     });
-    expect(response.navigationTree.path).toBe('/');
-    expect(response.navigationTree.level1[0].path).toBe('/shop');
+    expect(response.tree.path).toBe('/');
+    expect(response.tree.children[0].path).toBe('/shop');
     expect(response.tenant.name).toBe('Furniture');
 });
 
@@ -90,10 +88,8 @@ test('Test Nav fetching Node: / + extra data + specific level', async () => {
             }
         }
     );
-    expect(response.navigationTree.path).toBe('/');
-    expect(response.navigationTree.level1[0].path).toBe('/shop');
+    expect(response.tree.path).toBe('/');
+    expect(response.tree.children[0].path).toBe('/shop');
     expect(response.tenant.name).toBe('Furniture');
-    expect(response.navigationTree.shape.identifier).toBe(
-        '__catalogue-tree-root'
-    );
+    expect(response.tree.shape.identifier).toBe('__catalogue-tree-root');
 });
