@@ -29,7 +29,7 @@ const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
 const response = await fetch('/', 'en', 3);
 ```
 
-> Note `createNavigationTopicsFetcher` works exactly the same but for topics. [Examples for Topics](./tests/naigationTopic.test.js), [Examples for Items](./tests/naigationTree.test.js)
+> Note `createNavigationTopicsFetcher` works exactly the same but for topics. [Examples for Topics](./tests/naigationTopics.test.js), [Examples for Items](./tests/naigationTree.test.js)
 
 This will trigger the following query:
 
