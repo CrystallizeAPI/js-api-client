@@ -6,11 +6,11 @@ export interface ClientConfiguration {
     accessTokenSecret?: string;
 }
 
-type variablesType = { [key: string]: string | number };
+type VariablesType = { [key: string]: string | number | string[] | number[] };
 
 type ApiCaller<T, E, Z> = (
     query: string,
-    variables?: variablesType
+    variables?: VariablesType
 ) => Promise<T | E | Z>;
 
 export interface ClientInterface {
@@ -25,7 +25,7 @@ async function post<T, E, Z>(
     path: string,
     config: ClientConfiguration,
     query: string,
-    variables?: variablesType,
+    variables?: VariablesType,
     init?: RequestInit
 ): Promise<T | E | Z> {
     try {
@@ -58,7 +58,7 @@ export function createClient(configuration: ClientConfiguration) {
     function createApiCaller(uri: string): ApiCaller<any, any, string> {
         return function callApi<T, E, Z>(
             query: string,
-            variables?: variablesType
+            variables?: VariablesType
         ): Promise<T | E | Z> {
             return post<T, E, Z>(uri, configuration, query, variables);
         };
