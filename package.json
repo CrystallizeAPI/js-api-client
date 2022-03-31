@@ -17,10 +17,6 @@
         "@types/node-fetch": "^2",
         "jest": "^27.5.1"
     },
-    "volta": {
-        "node": "16.13.2",
-        "yarn": "1.22.18"
-    },
     "dependencies": {
         "dotenv": "^16.0.0",
         "json-to-graphql-query": "^2.2.3",
