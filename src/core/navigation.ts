@@ -110,10 +110,14 @@ function fetchTree<T>(
     };
 }
 
-export function createNavigationByFoldersFetcher(client: ClientInterface) {
+export function createNavigationByFoldersFetcher(
+    client: ClientInterface
+): TreeFetcher {
     return fetchTree(client, NavigationType.Tree);
 }
 
-export function createNavigationByTopicsFetcher(client: ClientInterface) {
+export function createNavigationByTopicsFetcher(
+    client: ClientInterface
+): TreeFetcher {
     return fetchTree(client, NavigationType.Topics);
 }

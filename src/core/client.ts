@@ -54,7 +54,9 @@ async function post<T, E, Z>(
     }
 }
 
-export function createClient(configuration: ClientConfiguration) {
+export function createClient(
+    configuration: ClientConfiguration
+): ClientInterface {
     function createApiCaller(uri: string): ApiCaller<any, any, string> {
         return function callApi<T, E, Z>(
             query: string,
