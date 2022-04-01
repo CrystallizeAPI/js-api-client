@@ -1,7 +1,15 @@
 export * from './core/client';
 export * from './core/navigation';
+export * from './core/hydrate';
 import { createClient } from './core/client';
-import { createNavigationByFoldersFetcher } from './core/navigation';
+import {
+    createNavigationByFoldersFetcher,
+    createNavigationByTopicsFetcher
+} from './core/navigation';
+import {
+    createProductHydraterByPaths,
+    createProductHydraterBySkus
+} from './core/hydrate';
 
 export const CrystallizeClient = createClient({
     tenantIdentifier: process.env.CRYSTALLIZE_TENANT_IDENTIFIER || '',
@@ -11,3 +19,9 @@ export const CrystallizeClient = createClient({
 
 export const CrystallizeNavigationTreeFetcher =
     createNavigationByFoldersFetcher(CrystallizeClient);
+export const CrystallizeNavigationTopicsFetcher =
+    createNavigationByTopicsFetcher(CrystallizeClient);
+export const CrystallizeHydraterByPaths =
+    createProductHydraterByPaths(CrystallizeClient);
+export const CrystallizeHydraterBySkus =
+    createProductHydraterBySkus(CrystallizeClient);
