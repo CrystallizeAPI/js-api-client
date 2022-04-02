@@ -1,6 +1,8 @@
 export * from './core/client';
 export * from './core/navigation';
 export * from './core/hydrate';
+export * from './core/product.types';
+
 import { createClient } from './core/client';
 import {
     createNavigationByFoldersFetcher,

@@ -5,7 +5,8 @@ export type ProductHydrater = (
     items: string[],
     language: string,
     extraQuery?: any,
-    perProduct?: (item: string, index: number) => any
+    perProduct?: (item: string, index: number) => any,
+    perVariant?: (item: string, index: number) => any
 ) => Promise<any>;
 
 export function createProductHydraterByPaths(
@@ -15,7 +16,8 @@ export function createProductHydraterByPaths(
         paths: string[],
         language: string,
         extraQuery?: any,
-        perProduct?: (item: string, index: number) => any
+        perProduct?: (path: string, index: number) => any,
+        perVariant?: (path: string, index: number) => any
     ): Promise<T> => {
         const productListQuery = paths
             .map((path: string, index: number) => {
@@ -27,21 +29,26 @@ export function createProductHydraterByPaths(
                         path: true,
                         __on: {
                             __typeName: 'Product',
-                            id: true,
                             vatType: {
                                 name: true,
                                 percent: true
                             },
                             variants: {
-                                id: true,
                                 sku: true,
                                 name: true,
-                                stock: true,
+                                attributes: {
+                                    attribute: true,
+                                    value: true
+                                },
                                 priceVariants: {
+                                    name: true,
                                     price: true,
                                     identifier: true,
                                     currency: true
-                                }
+                                },
+                                ...(perVariant !== undefined
+                                    ? perVariant(path, index)
+                                    : {})
                             },
                             ...(perProduct !== undefined
                                 ? perProduct(path, index)
@@ -62,6 +69,7 @@ export function createProductHydraterByPaths(
         };
 
         const fetch = client.catalogueApi;
+        console.log(jsonToGraphQLQuery(query));
         return fetch(jsonToGraphQLQuery(query));
     };
 }
@@ -124,7 +132,8 @@ export function createProductHydraterBySkus(
         skus: string[],
         language: string,
         extraQuery?: any,
-        perProduct?: (item: string, index: number) => any
+        perProduct?: (item: string, index: number) => any,
+        perVariant?: (item: string, index: number) => any
     ): Promise<T> => {
         const paths = await getPathForSkus(skus, language);
         if (paths.length === 0) {
@@ -144,7 +153,8 @@ export function createProductHydraterBySkus(
             paths,
             language,
             extraQuery,
-            perProduct
+            perProduct,
+            perVariant
         );
     };
 }
