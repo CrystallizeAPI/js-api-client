@@ -8,26 +8,23 @@ export interface ClientConfiguration {
 
 type VariablesType = { [key: string]: string | number | string[] | number[] };
 
-type ApiCaller<T, E, Z> = (
-    query: string,
-    variables?: VariablesType
-) => Promise<T | E | Z>;
+type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise<T>;
 
 export interface ClientInterface {
-    catalogueApi: ApiCaller<any, any, string>;
-    searchApi: ApiCaller<any, any, string>;
-    orderApi: ApiCaller<any, any, string>;
-    subscriptionApi: ApiCaller<any, any, string>;
-    pimApi: ApiCaller<any, any, string>;
+    catalogueApi: ApiCaller<any>;
+    searchApi: ApiCaller<any>;
+    orderApi: ApiCaller<any>;
+    subscriptionApi: ApiCaller<any>;
+    pimApi: ApiCaller<any>;
 }
 
-async function post<T, E, Z>(
+async function post<T>(
     path: string,
     config: ClientConfiguration,
     query: string,
     variables?: VariablesType,
     init?: RequestInit
-): Promise<T | E | Z> {
+): Promise<T> {
     try {
         const response = await fetch(path, {
             ...init,
@@ -46,23 +43,28 @@ async function post<T, E, Z>(
             return <T>{};
         }
         if (!response.ok) {
-            return <E>(await response.json()).errors;
+            const json = await response.json();
+            throw {
+                code: response.status,
+                message: response.statusText,
+                errors: json.errors || {}
+            };
         }
         return <T>(await response.json()).data;
     } catch (exception) {
-        return <Z>exception;
+        throw exception;
     }
 }
 
 export function createClient(
     configuration: ClientConfiguration
 ): ClientInterface {
-    function createApiCaller(uri: string): ApiCaller<any, any, string> {
-        return function callApi<T, E, Z>(
+    function createApiCaller(uri: string): ApiCaller<any> {
+        return function callApi<T>(
             query: string,
             variables?: VariablesType
-        ): Promise<T | E | Z> {
-            return post<T, E, Z>(uri, configuration, query, variables);
+        ): Promise<T> {
+            return post<T>(uri, configuration, query, variables);
         };
     }
 

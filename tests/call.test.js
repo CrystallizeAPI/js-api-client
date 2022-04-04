@@ -35,11 +35,16 @@ test('callCatalogueApi: Raw fetch Error', async () => {
                     }
                 }
             }`;
-    const response = await caller(query, {
-        language: 'en',
-        path: '/shop/chairs/bamboo-chair'
-    });
-    expect(response.length).toBeGreaterThanOrEqual(1);
+
+    try {
+        const response = await caller(query, {
+            language: 'en',
+            path: '/shop/chairs/bamboo-chair'
+        });
+    } catch (exception) {
+        expect(exception.code).toBe(400);
+        expect(exception.message).toBe('Bad Request');
+    }
 });
 
 test('callSearchApi: Raw fetch Skus', async () => {

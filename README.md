@@ -12,8 +12,18 @@ If you want to report or contribute, you should do it on the main repository: ht
 
 This lib provides simplifications / helpers to easily fetch data from your tenant.
 
--   [Navigation Tree Fetcher](#Navigation-Tree-Fetcher)
+-   [Order Pusher](#Order-Pusher)
+-   [Product Hydrater](#Product-Hydrater)
+-   [Navigation Fetcher](#Navigation-Tree-or-Topic-Fetcher)
 -   [Simple Client](#Client)
+
+Check the live demo: https://crystallizeapi.github.io/libraries/
+
+## Order Pusher
+
+You can use the `CrystallizeOrderPusher` to push an order to Crystallize, this helper will validate the order and throw exception if the input is incorrect.
+
+Also all the Types (and Zod JS type) are exported so you can work efficiently.)
 
 ## Navigation (Tree or Topic) Fetcher
 
@@ -25,11 +35,10 @@ It's very common that you will want to build the navigation of your website foll
 These fetchers do the heaving lifting for you.
 
 ```javascript
-const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
-const response = await fetch('/', 'en', 3);
+const response = await CrystallizeNavigationFoldersFetcher('/', 'en', 3);
 ```
 
-> Note `createNavigationTopicsFetcher` works exactly the same but for topics. [Examples for Topics](./tests/naigationTopics.test.js), [Examples for Items](./tests/naigationTree.test.js)
+> Note `CrystallizeNavigationTopicsFetcher` works exactly the same but for topics. [Examples for Topics](./tests/naigationTopics.test.js), [Examples for Items](./tests/naigationTree.test.js)
 
 This will trigger the following query:
 
@@ -50,100 +59,23 @@ This will trigger the following query:
       }
 ```
 
-You might want more, so you can pass a first parameter like this:
+You might want more customizations, here is the function signatures
 
-```javascript
-const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
-const response = await fetch('/', 'en', 2, {
-    tenant: {
-        __args: {
-            language: 'en'
-        },
-        name: true
-    }
-});
+```typescript
+function fetch(path:string, language:string, depth:number, extraQuery: any, (level:number) => any);
 ```
 
-This will trigger the following query:
+## Product Hydrater
 
-```graphql
-query ($language: String!, $path: String!) {
-    tree: catalogue(language: $language, path: $path) {
-        name
-        path
-        children {
-            name
-            path
-        }
-    }
-    tenant(language: "en") {
-        name
-    }
-}
+Usually in the context of the Cart you might want to keep the SKUs and/or the paths locally and ask Crystallize to hydrate the data.
+
+There is an help for that! Function signatures are:
+
+```typescript
+function CrystallizeHydraterByPaths|CrystallizeHydraterBySkus(items:string[], language:string, extraQuery: any, perProduct: (item: string, index: number) => any, perVariant: (item: string, index: number) => any);
 ```
 
-> This is using the wonderful https://www.npmjs.com/package/json-to-graphql-query
-
-You can also customize what you want in each level:
-
-```javascript
-const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
-const response = await fetch(
-    '/',
-    'en',
-    3,
-    {
-        tenant: {
-            __args: {
-                language: 'en'
-            },
-            name: true
-        }
-    },
-    (level) => {
-        switch (level) {
-            case 0:
-                return {
-                    shape: {
-                        identifier: true
-                    }
-                };
-            case 1:
-                return {
-                    createdAt: true
-                };
-            default:
-                return {};
-        }
-    }
-);
-```
-
-would result:
-
-```graphql
-query ($language: String!, $path: String!) {
-    tree: catalogue(language: $language, path: $path) {
-        name
-        path
-        shape {
-            name
-        }
-        children {
-            name
-            path
-            createdAt
-            children {
-                name
-                path
-            }
-        }
-    }
-    tenant(language: "en") {
-        name
-    }
-}
-```
+> It returns an array of products based on the strings in arguments (paths or skus)
 
 ## Client
 

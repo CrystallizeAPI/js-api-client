@@ -69,7 +69,6 @@ export function createProductHydraterByPaths(
         };
 
         const fetch = client.catalogueApi;
-        console.log(jsonToGraphQLQuery(query));
         return fetch(jsonToGraphQLQuery(query));
     };
 }
