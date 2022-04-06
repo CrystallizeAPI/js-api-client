@@ -12,12 +12,19 @@ If you want to report or contribute, you should do it on the main repository: ht
 
 This lib provides simplifications / helpers to easily fetch data from your tenant.
 
+-   [Order Payment Updater](#Order-Payment-Updater)
 -   [Order Pusher](#Order-Pusher)
 -   [Product Hydrater](#Product-Hydrater)
 -   [Navigation Fetcher](#Navigation-Tree-or-Topic-Fetcher)
 -   [Simple Client](#Client)
 
 Check the live demo: https://crystallizeapi.github.io/libraries/
+
+## Order Payment Updater
+
+You can use the `CrystallizeCreateOrderPaymentUpdater` to update an order with payment information in Crystallize, this helper will validate the payment and throw exception if the input is incorrect.
+
+Also all the Types (and Zod JS type) are exported so you can work efficiently.)
 
 ## Order Pusher
 

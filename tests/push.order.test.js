@@ -4,7 +4,7 @@ test('orderAPi: Test Validation', async () => {
     // it has to fail with 404 because we don't have any credentials
     try {
         const caller = CrystallizeOrderPusher;
-        const result = await caller({
+        await caller({
             customer: {
                 firstName2: 'William',
                 lastName: 'Wallace'
@@ -26,7 +26,7 @@ test('orderAPi: Push a new Order', async () => {
     // it has to fail with 404 because we don't have any credentials
     try {
         const caller = CrystallizeOrderPusher;
-        const result = await caller({
+        await caller({
             customer: {
                 firstName: 'William',
                 lastName: 'Wallace'

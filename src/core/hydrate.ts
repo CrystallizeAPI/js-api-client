@@ -9,9 +9,7 @@ export type ProductHydrater = (
     perVariant?: (item: string, index: number) => any
 ) => Promise<any>;
 
-export function createProductHydraterByPaths(
-    client: ClientInterface
-): ProductHydrater {
+export function createProductHydraterByPaths(client: ClientInterface): ProductHydrater {
     return <T>(
         paths: string[],
         language: string,
@@ -46,13 +44,9 @@ export function createProductHydraterByPaths(
                                     identifier: true,
                                     currency: true
                                 },
-                                ...(perVariant !== undefined
-                                    ? perVariant(path, index)
-                                    : {})
+                                ...(perVariant !== undefined ? perVariant(path, index) : {})
                             },
-                            ...(perProduct !== undefined
-                                ? perProduct(path, index)
-                                : {})
+                            ...(perProduct !== undefined ? perProduct(path, index) : {})
                         }
                     }
                 };
@@ -73,13 +67,8 @@ export function createProductHydraterByPaths(
     };
 }
 
-export function createProductHydraterBySkus(
-    client: ClientInterface
-): ProductHydrater {
-    async function getPathForSkus(
-        skus: string[],
-        language: string
-    ): Promise<string[]> {
+export function createProductHydraterBySkus(client: ClientInterface): ProductHydrater {
+    async function getPathForSkus(skus: string[], language: string): Promise<string[]> {
         const search = client.searchApi;
         const pathsSet = new Set<string>();
         let searchAfterCursor: any;
@@ -148,12 +137,6 @@ export function createProductHydraterBySkus(
 
             return empty as any;
         }
-        return createProductHydraterByPaths(client)(
-            paths,
-            language,
-            extraQuery,
-            perProduct,
-            perVariant
-        );
+        return createProductHydraterByPaths(client)(paths, language, extraQuery, perProduct, perVariant);
     };
 }

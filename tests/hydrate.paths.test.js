@@ -1,7 +1,4 @@
-const {
-    createClient,
-    createProductHydraterByPaths
-} = require('../dist/index.js');
+const { createClient, createProductHydraterByPaths } = require('../dist/index.js');
 
 test('Hydrate Paths', async () => {
     const CrystallizeClient = createClient({
@@ -17,10 +14,6 @@ test('Hydrate Paths', async () => {
         'en'
     );
 
-    expect(response.product0.path).toBe(
-        '/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood'
-    );
-    expect(response.product1.path).toBe(
-        '/shop/bathroom-fitting/mounted-bathroom-counter-with-shelf'
-    );
+    expect(response.product0.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');
+    expect(response.product1.path).toBe('/shop/bathroom-fitting/mounted-bathroom-counter-with-shelf');
 });

@@ -6,11 +6,7 @@ enum NavigationType {
     Topics
 }
 
-function nestedQuery(
-    depth: number,
-    start: number = 1,
-    extraQuery?: (currentLevel: number) => any
-): any {
+function nestedQuery(depth: number, start: number = 1, extraQuery?: (currentLevel: number) => any): any {
     const props = {
         name: true,
         path: true,
@@ -83,10 +79,7 @@ export type TreeFetcher = (
     perLevel?: (currentLevel: number) => any
 ) => Promise<any>;
 
-function fetchTree<T>(
-    client: ClientInterface,
-    type: NavigationType
-): TreeFetcher {
+function fetchTree<T>(client: ClientInterface, type: NavigationType): TreeFetcher {
     return <T>(
         path: string,
         language: string,
@@ -110,14 +103,10 @@ function fetchTree<T>(
     };
 }
 
-export function createNavigationByFoldersFetcher(
-    client: ClientInterface
-): TreeFetcher {
+export function createNavigationByFoldersFetcher(client: ClientInterface): TreeFetcher {
     return fetchTree(client, NavigationType.Tree);
 }
 
-export function createNavigationByTopicsFetcher(
-    client: ClientInterface
-): TreeFetcher {
+export function createNavigationByTopicsFetcher(client: ClientInterface): TreeFetcher {
     return fetchTree(client, NavigationType.Topics);
 }

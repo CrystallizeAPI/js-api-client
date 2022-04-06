@@ -33,8 +33,7 @@ async function post<T>(
                 'Content-type': 'application/json; charset=UTF-8',
                 Accept: 'application/json',
                 'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
-                'X-Crystallize-Access-Token-Secret':
-                    config.accessTokenSecret || ''
+                'X-Crystallize-Access-Token-Secret': config.accessTokenSecret || ''
             },
             body: JSON.stringify({ query, variables })
         });
@@ -56,31 +55,18 @@ async function post<T>(
     }
 }
 
-export function createClient(
-    configuration: ClientConfiguration
-): ClientInterface {
+export function createClient(configuration: ClientConfiguration): ClientInterface {
     function createApiCaller(uri: string): ApiCaller<any> {
-        return function callApi<T>(
-            query: string,
-            variables?: VariablesType
-        ): Promise<T> {
+        return function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
             return post<T>(uri, configuration, query, variables);
         };
     }
 
     return {
-        catalogueApi: createApiCaller(
-            `https://api.crystallize.com/${configuration.tenantIdentifier}/catalogue`
-        ),
-        searchApi: createApiCaller(
-            `https://api.crystallize.com/${configuration.tenantIdentifier}/search`
-        ),
-        orderApi: createApiCaller(
-            `https://api.crystallize.com/${configuration.tenantIdentifier}/orders`
-        ),
-        subscriptionApi: createApiCaller(
-            `https://api.crystallize.com/${configuration.tenantIdentifier}/subscriptions`
-        ),
+        catalogueApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/catalogue`),
+        searchApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/search`),
+        orderApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/orders`),
+        subscriptionApi: createApiCaller(`https://api.crystallize.com/${configuration.tenantIdentifier}/subscriptions`),
         pimApi: createApiCaller(`https://pim.crystallize.com/graphql`)
     };
 }

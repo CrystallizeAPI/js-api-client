@@ -80,7 +80,5 @@ test('callSearchApi: Raw fetch Skus', async () => {
         language: 'en'
     });
 
-    expect(response.search.edges[0].node.path).toBe(
-        '/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood'
-    );
+    expect(response.search.edges[0].node.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');
 });

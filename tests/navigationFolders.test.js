@@ -1,7 +1,4 @@
-const {
-    createNavigationByFoldersFetcher,
-    createClient
-} = require('../dist/index.js');
+const { createNavigationByFoldersFetcher, createClient } = require('../dist/index.js');
 
 test('Test Nav fetching Node: Shop', async () => {
     const CrystallizeClient = createClient({
@@ -13,14 +10,10 @@ test('Test Nav fetching Node: Shop', async () => {
 
     expect(response.tree.path).toBe('/shop');
     expect(response.tree.children[0].path).toBe('/shop/decoration');
-    expect(response.tree.children[0].children[0].path).toBe(
-        '/shop/decoration/shelves-in-wood'
-    );
+    expect(response.tree.children[0].children[0].path).toBe('/shop/decoration/shelves-in-wood');
 
     expect(response.tree.children[1].path).toBe('/shop/bathroom-fitting');
-    expect(response.tree.children[1].children[2].path).toBe(
-        '/shop/bathroom-fitting/mounted-bathroom-vanity-in-gray'
-    );
+    expect(response.tree.children[1].children[2].path).toBe('/shop/bathroom-fitting/mounted-bathroom-vanity-in-gray');
 });
 
 test('Test Nav fetching Node: /', async () => {

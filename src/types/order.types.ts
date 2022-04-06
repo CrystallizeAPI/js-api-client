@@ -1,4 +1,13 @@
+import { EnumType } from 'json-to-graphql-query';
 import { z } from 'zod';
+import {
+    cashPaymentInputRequest,
+    customPaymentInputRequest,
+    klarnaPaymentInputRequest,
+    paymentProvider,
+    paypalPaymentInputRequest,
+    stripePaymentInputRequest
+} from './payment.types';
 
 export const orderItemMeteredVariableInput = z
     .object({
@@ -13,7 +22,7 @@ export const orderItemSubscriptionInput = z
     .object({
         name: z.string().optional(),
         period: z.number(),
-        unit: z.enum(['minute', 'hour', 'day', 'week', 'month', 'year']),
+        unit: z.enum(['minute', 'hour', 'day', 'week', 'month', 'year']).transform((val) => new EnumType(val)),
         start: z.date().optional(),
         end: z.date().optional(),
         meteredVariables: z.array(orderItemMeteredVariableInput).optional()
@@ -64,7 +73,7 @@ export type OrderItemInputRequest = z.infer<typeof orderItemInputRequest>;
 
 export const addressInputRequest = z
     .object({
-        type: z.enum(['delivery', 'billing', 'other']),
+        type: z.enum(['delivery', 'billing', 'other']).transform((val) => new EnumType(val)),
         firstName: z.string().optional(),
         middleName: z.string().optional(),
         lastName: z.string().optional(),
@@ -95,19 +104,45 @@ export const customerInputRequest = z
     .strict();
 export type CustomerInputRequest = z.infer<typeof customerInputRequest>;
 
-export const createOrderInputRequest = z
+export const paymentInputRequest = z
     .object({
-        customer: customerInputRequest,
-        cart: z.array(orderItemInputRequest),
+        provider: paymentProvider,
+        klarna: klarnaPaymentInputRequest.optional(),
+        paypal: paypalPaymentInputRequest.optional(),
+        stripe: stripePaymentInputRequest.optional(),
+        cash: cashPaymentInputRequest.optional(),
+        custom: customPaymentInputRequest.optional()
+    })
+    .strict();
+export type PaymentInputRequest = z.infer<typeof paymentInputRequest>;
+
+export const updateOrderInputRequest = z
+    .object({
+        customer: customerInputRequest.optional(),
+        cart: z.array(orderItemInputRequest).optional(),
+        payment: z.array(paymentInputRequest).optional(),
         total: priceInputRequest.optional(),
         additionnalInformation: z.string().optional(),
-        meta: z.array(orderMetadataInputRequest).optional(),
+        meta: z.array(orderMetadataInputRequest).optional()
+    })
+    .strict();
+export type UpdateOrderInputRequest = z.infer<typeof updateOrderInputRequest>;
+
+export const createOrderInputRequest = updateOrderInputRequest
+    .extend({
+        customer: customerInputRequest,
+        cart: z.array(orderItemInputRequest),
         createdAt: z.date().optional()
     })
     .strict();
 export type CreateOrderInputRequest = z.infer<typeof createOrderInputRequest>;
 
-export interface OrderConfirmation {
+export interface OrderCreatedConfirmation {
     id: string;
     createdAt: Date;
+}
+
+export interface OrderUpdatedConfirmation {
+    id: string;
+    updatedAt: Date;
 }

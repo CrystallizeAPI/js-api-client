@@ -1,7 +1,4 @@
-const {
-    createNavigationByTopicsFetcher,
-    createClient
-} = require('../dist/index.js');
+const { createNavigationByTopicsFetcher, createClient } = require('../dist/index.js');
 
 test('Test Nav fetching Topic: /', async () => {
     const CrystallizeClient = createClient({
@@ -80,7 +77,5 @@ test('Test Nav fetching Topic: /specials + extra data + specific level', async (
     expect(response.tree.children[0].name).toBe('Organic');
     expect(response.tree.children[0].parent.path).toBe('/specials');
 
-    expect(response.tree.children[0].items.edges[0].node.path).toBe(
-        '/shop/plants/monstera-deliciosa'
-    );
+    expect(response.tree.children[0].items.edges[0].node.path).toBe('/shop/plants/monstera-deliciosa');
 });
