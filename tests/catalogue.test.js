@@ -27,7 +27,7 @@ test('Catalogue Query Builder Test', () => {
                     }
                 }
             },
-            result: `query { catalogue { children { ... on Item { __typename name path test: component (id: \"test\") { content { __typename ... on RichTextContent { json } } } topics { name path } } ... on Product { __typename defaultVariant { firstImage { url } } vatType { name percent } variants { name sku price } } ... on Document { __typename } ... on Folder { __typename } } } }`
+            result: `query { catalogue { children { ... on Item { __typename name path test: component (id: \"test\") { content { __typename ... on RichTextContent { json } } } topics { name path } } ... on Product { __typename defaultVariant { firstImage { url } } vatType { name percent } } ... on Document { __typename } ... on Folder { __typename } } } }`
         },
         {
             query: {
@@ -62,9 +62,8 @@ test('Catalogue Query Builder Test', () => {
                     }
                 }
             },
-            result: `query { grid (id: "test") { name } catalogue { id tenant { name } children { ... on Item { __typename name path test: component (id: \"test\") { content { __typename ... on RichTextContent { json } } } topics { name path } } ... on Product { __typename defaultVariant { firstImage { url } } vatType { name percent } variants { name sku price } } ... on Document { __typename } ... on Folder { __typename } } } }`
+            result: `query { grid (id: \"test\") { name } catalogue { id tenant { name } children { ... on Item { __typename name path test: component (id: \"test\") { content { __typename ... on RichTextContent { json } } } topics { name path } } ... on Product { __typename defaultVariant { firstImage { url } } vatType { name percent } } ... on Document { __typename } ... on Folder { __typename } } } }`
         },
-        ,
         {
             query: {
                 catalogue: {

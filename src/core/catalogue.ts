@@ -68,22 +68,37 @@ function onFolder(onFolder?: any, c?: CatalogueFetcherGrapqhqlOnFolder): any {
 }
 
 function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any {
-    const defaultVariant = () => {
-        if (c?.onDefaultVariant) {
+    const priceVariant = () => {
+        if (c?.onPriceVariant) {
             return {
-                defaultVariant: {
-                    ...c.onDefaultVariant
+                priceVariants: {
+                    ...c.onPriceVariant
                 }
             };
         }
         return {};
     };
 
-    const priceVariant = () => {
-        if (c?.onPriceVariant) {
+    const variants = () => {
+        if (c?.onVariant) {
             return {
-                priceVariants: {
-                    ...c.onPriceVariant
+                variants: {
+                    name: true,
+                    sku: true,
+                    price: true,
+                    ...priceVariant(),
+                    ...(c?.onVariant ? c.onVariant : {})
+                }
+            };
+        }
+        return {};
+    };
+
+    const defaultVariant = () => {
+        if (c?.onDefaultVariant) {
+            return {
+                defaultVariant: {
+                    ...c.onDefaultVariant
                 }
             };
         }
@@ -99,13 +114,7 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
             percent: true
         },
         ...defaultVariant(),
-        variants: {
-            name: true,
-            sku: true,
-            price: true,
-            ...(c?.onVariant ? c.onVariant : {})
-        },
-        ...priceVariant()
+        ...variants()
     };
 }
 
