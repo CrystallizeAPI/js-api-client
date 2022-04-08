@@ -45,7 +45,8 @@ async function post<T>(
             const json = await response.json();
             throw {
                 code: response.status,
-                message: response.statusText,
+                statusText: response.statusText,
+                message: json.message,
                 errors: json.errors || {}
             };
         }
