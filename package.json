@@ -1,4 +1,11 @@
 {
+    "name": "@crystallize/js-api-client",
+    "license": "MIT",
+    "version": "0.3.1",
+    "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
+    "contributors": [
+        "Sébastien Morel <sebastien@crystallize.com>"
+    ],
     "scripts": {
         "watch": "yarn tsc -W",
         "build": "yarn tsc",
@@ -24,8 +31,5 @@
         "tiny-invariant": "^1.2.0",
         "typescript": "^4.6.3",
         "zod": "^3.14.3"
-    },
-    "license": "MIT",
-    "name": "@crystallize/js-api-client",
-    "version": "0.3.1"
+    }
 }

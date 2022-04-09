@@ -43,7 +43,7 @@ test('callCatalogueApi: Raw fetch Error', async () => {
         });
     } catch (exception) {
         expect(exception.code).toBe(400);
-        expect(exception.message).toBe('Bad Request');
+        expect(exception.statusText).toBe('Bad Request');
     }
 });
 
