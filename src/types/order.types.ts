@@ -1,13 +1,19 @@
 import { EnumType } from 'json-to-graphql-query';
 import { z } from 'zod';
 import {
+    CashPayment,
     cashPaymentInputRequest,
+    CustomPayment,
     customPaymentInputRequest,
+    KlarnaPayment,
     klarnaPaymentInputRequest,
     paymentProvider,
+    PaypalPayment,
     paypalPaymentInputRequest,
+    StripePayment,
     stripePaymentInputRequest
 } from './payment.types';
+import { SubscriptionPeriodUnit, VatInfo } from './product.types';
 
 export const orderItemMeteredVariableInput = z
     .object({
@@ -147,4 +153,73 @@ export interface OrderCreatedConfirmation {
 export interface OrderUpdatedConfirmation {
     id: string;
     updatedAt: Date;
+}
+
+export interface Order {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    cart: OrderItem[];
+    customer: Customer;
+    payment?: Payment[];
+    total?: Price;
+    additionnalInformation?: string;
+    meta?: OrderMetadata[];
+}
+
+export interface OrderItem {
+    name: string;
+    sku?: string;
+    productId?: string;
+    productVariantId?: string;
+    imageUrl?: string;
+    quantity: number;
+    subscription?: OrderItemSubscription;
+    subscriptionContractId?: string;
+    price?: Price;
+    subTotal?: Price;
+    meta?: OrderMetadata[];
+}
+export type Address = AddressInputRequest;
+
+export type Customer = Omit<CustomerInputRequest, 'addresses'> & {
+    addresses: Address[];
+};
+
+export type Payment = KlarnaPayment | PaypalPayment | StripePayment | CashPayment | CustomPayment;
+
+export interface Price {
+    gross?: number;
+    net?: number;
+    currency: string;
+    discounts?: Discount[];
+    tax?: Tax;
+}
+
+export type Tax = VatInfo;
+
+export interface Discount {
+    percent?: number;
+}
+
+export interface OrderMetadata {
+    key: string;
+    value?: string;
+}
+
+export interface OrderItemSubscription {
+    name?: string;
+    period: number;
+    unit: OrderItemSubscriptionUnit;
+    start?: Date;
+    end?: Date;
+    meteredVariables?: OrderItemSubscriptionMeteredVariable[];
+}
+
+export type OrderItemSubscriptionUnit = SubscriptionPeriodUnit | 'hour' | 'minute';
+
+export interface OrderItemSubscriptionMeteredVariable {
+    id: string;
+    usage: number;
+    price: number;
 }

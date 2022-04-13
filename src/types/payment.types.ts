@@ -69,3 +69,13 @@ export const customPaymentInputRequest = z
     })
     .strict();
 export type CustomPaymentInputRequest = z.infer<typeof customPaymentInputRequest>;
+
+interface PaymentType {
+    provider: PaymentProvider;
+}
+
+export type KlarnaPayment = PaymentType & Omit<KlarnaPaymentInputRequest, 'klarna'>;
+export type PaypalPayment = PaymentType & Omit<PaypalPaymentInputRequest, 'paypal'>;
+export type StripePayment = PaymentType & Omit<StripePaymentInputRequest, 'stripe'>;
+export type CashPayment = PaymentType & CashPaymentInputRequest;
+export type CustomPayment = PaymentType & CustomPaymentInputRequest;
