@@ -9,7 +9,7 @@ export type ProductHydrater = (
     perVariant?: (item: string, index: number) => any
 ) => Promise<any>;
 
-export function createProductHydraterByPaths(client: ClientInterface): ProductHydrater {
+function byPaths(client: ClientInterface): ProductHydrater {
     return <T>(
         paths: string[],
         language: string,
@@ -56,18 +56,16 @@ export function createProductHydraterByPaths(client: ClientInterface): ProductHy
             }, {});
 
         const query = {
-            query: {
-                ...{ ...productListQuery },
-                ...(extraQuery !== undefined ? extraQuery : {})
-            }
+            ...{ ...productListQuery },
+            ...(extraQuery !== undefined ? extraQuery : {})
         };
 
         const fetch = client.catalogueApi;
-        return fetch(jsonToGraphQLQuery(query));
+        return fetch(jsonToGraphQLQuery({ query }));
     };
 }
 
-export function createProductHydraterBySkus(client: ClientInterface): ProductHydrater {
+function bySkus(client: ClientInterface): ProductHydrater {
     async function getPathForSkus(skus: string[], language: string): Promise<string[]> {
         const search = client.searchApi;
         const pathsSet = new Set<string>();
@@ -137,6 +135,16 @@ export function createProductHydraterBySkus(client: ClientInterface): ProductHyd
 
             return empty as any;
         }
-        return createProductHydraterByPaths(client)(paths, language, extraQuery, perProduct, perVariant);
+        return byPaths(client)(paths, language, extraQuery, perProduct, perVariant);
+    };
+}
+
+export function createProductHydrater(client: ClientInterface): {
+    byPaths: ProductHydrater;
+    bySkus: ProductHydrater;
+} {
+    return {
+        byPaths: byPaths(client),
+        bySkus: bySkus(client)
     };
 }

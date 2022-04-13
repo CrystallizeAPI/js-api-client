@@ -1,11 +1,11 @@
-const { createNavigationByFoldersFetcher, createClient } = require('../dist/index.js');
+const { createNavigationFetcher, createClient } = require('../dist/index.js');
 
 test('Test Nav fetching Node: Shop', async () => {
     const CrystallizeClient = createClient({
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
+    const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
     const response = await fetch('/shop', 'en', 3);
 
     expect(response.tree.path).toBe('/shop');
@@ -21,7 +21,7 @@ test('Test Nav fetching Node: /', async () => {
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
+    const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
     const response = await fetch('/', 'en', 3);
     expect(response.tree.path).toBe('/');
     expect(response.tree.children[0].path).toBe('/shop');
@@ -32,7 +32,7 @@ test('Test Nav fetching Node: / + extra data', async () => {
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
+    const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
     const response = await fetch('/', 'en', 2, {
         tenant: {
             __args: {
@@ -51,7 +51,7 @@ test('Test Nav fetching Node: / + extra data + specific level', async () => {
         tenantIdentifier: 'furniture'
     });
 
-    const fetch = createNavigationByFoldersFetcher(CrystallizeClient);
+    const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
     const response = await fetch(
         '/',
         'en',

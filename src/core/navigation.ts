@@ -90,23 +90,23 @@ function fetchTree<T>(client: ClientInterface, type: NavigationType): TreeFetche
         const fetch = client.catalogueApi;
         const baseQuery = buildQueryFor(type, path);
         const query = {
-            query: {
-                ...baseQuery,
-                tree: {
-                    ...baseQuery.tree,
-                    ...nestedQuery(depth, 1, perLevel)
-                },
-                ...(extraQuery !== undefined ? extraQuery : {})
-            }
+            ...baseQuery,
+            tree: {
+                ...baseQuery.tree,
+                ...nestedQuery(depth, 1, perLevel)
+            },
+            ...(extraQuery !== undefined ? extraQuery : {})
         };
-        return fetch(jsonToGraphQLQuery(query), { language, path });
+        return fetch(jsonToGraphQLQuery({ query }), { language, path });
     };
 }
 
-export function createNavigationByFoldersFetcher(client: ClientInterface): TreeFetcher {
-    return fetchTree(client, NavigationType.Tree);
-}
-
-export function createNavigationByTopicsFetcher(client: ClientInterface): TreeFetcher {
-    return fetchTree(client, NavigationType.Topics);
+export function createNavigationFetcher(client: ClientInterface): {
+    byFolders: TreeFetcher;
+    byTopics: TreeFetcher;
+} {
+    return {
+        byFolders: fetchTree(client, NavigationType.Tree),
+        byTopics: fetchTree(client, NavigationType.Topics)
+    };
 }

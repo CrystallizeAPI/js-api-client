@@ -2,12 +2,72 @@ import { ClientInterface } from './client';
 import {
     CreateOrderInputRequest,
     createOrderInputRequest,
+    Order,
     OrderCreatedConfirmation,
     OrderUpdatedConfirmation,
     updateOrderInputRequest,
     UpdateOrderInputRequest
 } from '../types/order.types';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
+
+export function createOrderFetcher(apiClient: ClientInterface) {
+    const fetchOrderById = async (
+        orderId: string,
+        onCustomer?: any,
+        onOrderItem?: any,
+        extraQuery?: any
+    ): Promise<Order> => {
+        const orderApi = apiClient.orderApi;
+        const query = {
+            orders: {
+                get: {
+                    __args: {
+                        id: orderId
+                    },
+                    id: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    customer: {
+                        identifier: true,
+                        ...(onCustomer !== undefined ? onCustomer : {})
+                    },
+                    cart: {
+                        name: true,
+                        sku: true,
+                        imageUrl: true,
+                        quantity: true,
+                        ...(onOrderItem !== undefined ? onOrderItem : {}),
+                        price: {
+                            gross: true,
+                            net: true,
+                            discounts: {
+                                percent: true
+                            }
+                        }
+                    },
+                    total: {
+                        gross: true,
+                        net: true,
+                        currency: true,
+                        discounts: {
+                            percent: true
+                        },
+                        tax: {
+                            name: true,
+                            percent: true
+                        }
+                    },
+                    ...(extraQuery !== undefined ? extraQuery : {})
+                }
+            }
+        };
+        return (await orderApi(jsonToGraphQLQuery({ query })))?.orders?.get;
+    };
+
+    return {
+        byId: fetchOrderById
+    };
+}
 
 export function createOrderPusher(apiClient: ClientInterface) {
     return async function pushOrder(intentOrder: CreateOrderInputRequest): Promise<OrderCreatedConfirmation> {

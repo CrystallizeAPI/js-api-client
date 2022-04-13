@@ -12,7 +12,7 @@ import {
 
 export function createCatalogueFetcher(client: ClientInterface) {
     return <T>(query: any): Promise<T> => {
-        return client.catalogueApi(jsonToGraphQLQuery({ query: { ...query } }));
+        return client.catalogueApi(jsonToGraphQLQuery({ query }));
     };
 }
 
