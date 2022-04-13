@@ -10,7 +10,92 @@ import {
 } from '../types/order.types';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 
+function buildQuery(onCustomer?: any, onOrderItem?: any, extraQuery?: any) {
+    return {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        customer: {
+            identifier: true,
+            ...(onCustomer !== undefined ? onCustomer : {})
+        },
+        cart: {
+            name: true,
+            sku: true,
+            imageUrl: true,
+            quantity: true,
+            ...(onOrderItem !== undefined ? onOrderItem : {}),
+            price: {
+                gross: true,
+                net: true,
+                discounts: {
+                    percent: true
+                }
+            }
+        },
+        total: {
+            gross: true,
+            net: true,
+            currency: true,
+            discounts: {
+                percent: true
+            },
+            tax: {
+                name: true,
+                percent: true
+            }
+        },
+        ...(extraQuery !== undefined ? extraQuery : {})
+    };
+}
+
 export function createOrderFetcher(apiClient: ClientInterface) {
+    // we don't provide the current cursor for each Order.
+    const fetchPaginatedOrdersByCustomerIdentifier = async (
+        customerIdentifier: string,
+        extraQueryArgs?: any,
+        onCustomer?: any,
+        onOrderItem?: any,
+        extraQuery?: any
+    ): Promise<{
+        pageInfo: {
+            hasNextPage: boolean;
+            hasPreviousPage: boolean;
+            startCursor: string;
+            endCursor: string;
+            totalNodes: number;
+        };
+        orders: Order[];
+    }> => {
+        const orderApi = apiClient.orderApi;
+        const query = {
+            orders: {
+                getAll: {
+                    __args: {
+                        customerIdentifier: customerIdentifier,
+                        ...(extraQueryArgs !== undefined ? extraQueryArgs : {})
+                    },
+                    pageInfo: {
+                        hasPreviousPage: true,
+                        hasNextPage: true,
+                        startCursor: true,
+                        endCursor: true,
+                        totalNodes: true
+                    },
+                    edges: {
+                        cursor: true,
+                        node: buildQuery(onCustomer, onOrderItem, extraQuery)
+                    }
+                }
+            }
+        };
+        const response = await orderApi(jsonToGraphQLQuery({ query }));
+        return {
+            pageInfo: response.orders.getAll.pageInfo,
+            orders: response.orders.getAll.edges.map((edge: any) => edge.node)
+        };
+    };
+
     const fetchOrderById = async (
         orderId: string,
         onCustomer?: any,
@@ -65,7 +150,8 @@ export function createOrderFetcher(apiClient: ClientInterface) {
     };
 
     return {
-        byId: fetchOrderById
+        byId: fetchOrderById,
+        byCustomerIdentifier: fetchPaginatedOrdersByCustomerIdentifier
     };
 }
 

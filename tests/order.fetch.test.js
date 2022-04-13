@@ -1,18 +1,25 @@
-const { CrystallizeOrderFetcherById } = require('../dist/index.js');
+const { CrystallizeOrderFetcherById, CrystallizeOrderFetcherByCustomerIdentifier } = require('../dist/index.js');
 
-test('Hydrate Paths', async () => {
+test('Oder By ID', async () => {
     const fetcher = CrystallizeOrderFetcherById;
-    const order = await fetcher('62557a65be73e0f09258ef69');
-    console.log(order);
-    // const hydrater = createProductHydraterByPaths(CrystallizeClient);
-    // const response = await hydrater(
-    //     [
-    //         '/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood',
-    //         '/shop/bathroom-fitting/mounted-bathroom-counter-with-shelf'
-    //     ],
-    //     'en'
-    // );
+    try {
+        // it has to fail with 404 because we don't have any credentials
+        const order = await fetcher('62557a65be73e0f09258ef69');
+        expect(order.cart[0].name).toBe('sofa');
+    } catch (exception) {
+        expect(exception.code).toBe(404);
+    }
+});
 
-    // expect(response.product0.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');
-    // expect(response.product1.path).toBe('/shop/bathroom-fitting/mounted-bathroom-counter-with-shelf');
+test('Oder By Customer ID', async () => {
+    const fetcher = CrystallizeOrderFetcherByCustomerIdentifier;
+    try {
+        // it has to fail with 404 because we don't have any credentials
+        const pagination = await fetcher('GillesC.');
+        expect(pagination.orders[0].cart[0].name).toBe('iteasadadsdm1');
+        expect(pagination.orders[1].cart[0].name).toBe('item1');
+        expect(pagination.orders[1].cart[0].quantity).toBe(1);
+    } catch (exception) {
+        expect(exception.code).toBe(404);
+    }
 });

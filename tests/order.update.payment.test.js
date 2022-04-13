@@ -15,7 +15,7 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
                                 value: 'Plopix Coin'
                             },
                             {
-                                property: 'amountt',
+                                property: 'amount',
                                 value: '112358'
                             }
                         ]
@@ -30,7 +30,7 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
                                 value: 'Plopix Coin 2'
                             },
                             {
-                                property: 'amountt',
+                                property: 'amount',
                                 value: '90'
                             }
                         ]

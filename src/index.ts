@@ -35,3 +35,4 @@ export const CrystallizeCatalogueFetcher = createCatalogueFetcher(CrystallizeCli
 
 const orderFetcher = createOrderFetcher(CrystallizeClient);
 export const CrystallizeOrderFetcherById = orderFetcher.byId;
+export const CrystallizeOrderFetcherByCustomerIdentifier = orderFetcher.byCustomerIdentifier;
