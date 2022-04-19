@@ -7,7 +7,7 @@ import {
     OrderUpdatedConfirmation,
     updateOrderInputRequest,
     UpdateOrderInputRequest
-} from '../types/order.types';
+} from '../types/order';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 
 function buildQuery(onCustomer?: any, onOrderItem?: any, extraQuery?: any) {

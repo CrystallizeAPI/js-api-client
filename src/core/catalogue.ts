@@ -8,7 +8,7 @@ import {
     CatalogueFetcherGrapqhqlOnProduct,
     componentType,
     ComponentType
-} from '../types/catalogue.types';
+} from '../types/catalogue';
 
 export function createCatalogueFetcher(client: ClientInterface) {
     return <T>(query: any): Promise<T> => {

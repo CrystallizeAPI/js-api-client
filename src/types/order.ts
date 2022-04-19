@@ -12,8 +12,8 @@ import {
     paypalPaymentInputRequest,
     StripePayment,
     stripePaymentInputRequest
-} from './payment.types';
-import { SubscriptionPeriodUnit, VatInfo } from './product.types';
+} from './payment';
+import { SubscriptionPeriodUnit, VatInfo } from './product';
 
 export const orderItemMeteredVariableInput = z
     .object({

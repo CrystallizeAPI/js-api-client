@@ -3,9 +3,10 @@ export * from './core/navigation';
 export * from './core/hydrate';
 export * from './core/catalogue';
 export * from './core/order';
-export * from './types/product.types';
-export * from './types/order.types';
-export * from './types/payment.types';
+export * from './types/product';
+export * from './types/order';
+export * from './types/payment';
+export * from './types/components';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';
