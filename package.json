@@ -17,7 +17,7 @@
         "url": "https://github.com/CrystallizeAPI/js-api-client.git"
     },
     "main": "dist/index.js",
-    "types": "dist/types/index.d.ts",
+    "types": "dist/index.d.ts",
     "devDependencies": {
         "@tsconfig/node16": "^1.0.2",
         "@types/node": "^17.0.23",
