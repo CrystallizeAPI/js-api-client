@@ -2,7 +2,7 @@ const { createClient } = require('../dist/index.js');
 
 test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const caller = CrystallizeClient.catalogueApi;
@@ -16,14 +16,14 @@ test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
             }`;
     const response = await caller(query, {
         language: 'en',
-        path: '/shop/chairs/bamboo-chair'
+        path: '/shop/chairs/bamboo-chair',
     });
     expect(response.catalogue.name).toBe('Bamboo Chair');
 });
 
 test('callCatalogueApi: Raw fetch Error', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const caller = CrystallizeClient.catalogueApi;
@@ -39,7 +39,7 @@ test('callCatalogueApi: Raw fetch Error', async () => {
     try {
         const response = await caller(query, {
             language: 'en',
-            path: '/shop/chairs/bamboo-chair'
+            path: '/shop/chairs/bamboo-chair',
         });
     } catch (exception) {
         expect(exception.code).toBe(400);
@@ -49,7 +49,7 @@ test('callCatalogueApi: Raw fetch Error', async () => {
 
 test('callSearchApi: Raw fetch Skus', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const caller = CrystallizeClient.searchApi;
@@ -77,7 +77,7 @@ test('callSearchApi: Raw fetch Skus', async () => {
           }`;
     const response = await caller(query, {
         skus: ['b-1628520141076'],
-        language: 'en'
+        language: 'en',
     });
 
     expect(response.search.edges[0].node.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');

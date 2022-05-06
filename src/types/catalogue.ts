@@ -34,7 +34,7 @@ export const componentType = z
         'RichText',
         'Selection',
         'SingleLine',
-        'Video'
+        'Video',
     ])
     .transform((value) => `${value}Content`);
 

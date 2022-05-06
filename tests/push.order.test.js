@@ -7,15 +7,15 @@ test('orderAPi: Test Validation', async () => {
         await caller({
             customer: {
                 firstName2: 'William',
-                lastName: 'Wallace'
+                lastName: 'Wallace',
             },
             cart: [
                 {
                     sku: '123',
                     name: 'Bamboo Chair',
-                    quantity: 3
-                }
-            ]
+                    quantity: 3,
+                },
+            ],
         });
     } catch (exception) {
         expect(exception.errors[0].code).toBe('unrecognized_keys');
@@ -29,15 +29,15 @@ test('orderAPi: Push a new Order', async () => {
         await caller({
             customer: {
                 firstName: 'William',
-                lastName: 'Wallace'
+                lastName: 'Wallace',
             },
             cart: [
                 {
                     sku: '123',
                     name: 'Bamboo Chair',
-                    quantity: 3
-                }
-            ]
+                    quantity: 3,
+                },
+            ],
         });
     } catch (exception) {
         expect(exception.code).toBe(404);

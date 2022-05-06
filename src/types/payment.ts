@@ -15,7 +15,7 @@ export const klarnaPaymentInputRequest = z
         status: z.string().optional(),
         merchantReference1: z.string().optional(),
         merchantReference2: z.string().optional(),
-        metadata: z.string().optional()
+        metadata: z.string().optional(),
     })
     .strict();
 export type KlarnaPaymentInputRequest = z.infer<typeof klarnaPaymentInputRequest>;
@@ -27,7 +27,7 @@ export const paypalPaymentInputRequest = z
         orderId: z.string().optional(),
         subscriptionId: z.string().optional(),
         invoiceId: z.string().optional(),
-        metadata: z.string().optional()
+        metadata: z.string().optional(),
     })
     .strict();
 export type PaypalPaymentInputRequest = z.infer<typeof paypalPaymentInputRequest>;
@@ -42,7 +42,7 @@ export const stripePaymentInputRequest = z
         paymentMethodId: z.string().optional(),
         paymentIntentId: z.string().optional(),
         subscriptionId: z.string().optional(),
-        metadata: z.string().optional()
+        metadata: z.string().optional(),
     })
     .strict();
 export type StripePaymentInputRequest = z.infer<typeof stripePaymentInputRequest>;
@@ -50,7 +50,7 @@ export type StripePaymentInputRequest = z.infer<typeof stripePaymentInputRequest
 // Cash
 export const cashPaymentInputRequest = z
     .object({
-        cash: z.string().optional()
+        cash: z.string().optional(),
     })
     .strict();
 export type CashPaymentInputRequest = z.infer<typeof cashPaymentInputRequest>;
@@ -62,10 +62,10 @@ export const customPaymentInputRequest = z
             .array(
                 z.object({
                     property: z.string(),
-                    value: z.string().optional()
-                })
+                    value: z.string().optional(),
+                }),
             )
-            .optional()
+            .optional(),
     })
     .strict();
 export type CustomPaymentInputRequest = z.infer<typeof customPaymentInputRequest>;

@@ -6,7 +6,7 @@ import {
     OrderCreatedConfirmation,
     OrderUpdatedConfirmation,
     updateOrderInputRequest,
-    UpdateOrderInputRequest
+    UpdateOrderInputRequest,
 } from '../types/order';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 
@@ -17,7 +17,7 @@ function buildQuery(onCustomer?: any, onOrderItem?: any, extraQuery?: any) {
         updatedAt: true,
         customer: {
             identifier: true,
-            ...(onCustomer !== undefined ? onCustomer : {})
+            ...(onCustomer !== undefined ? onCustomer : {}),
         },
         cart: {
             name: true,
@@ -29,23 +29,23 @@ function buildQuery(onCustomer?: any, onOrderItem?: any, extraQuery?: any) {
                 gross: true,
                 net: true,
                 discounts: {
-                    percent: true
-                }
-            }
+                    percent: true,
+                },
+            },
         },
         total: {
             gross: true,
             net: true,
             currency: true,
             discounts: {
-                percent: true
+                percent: true,
             },
             tax: {
                 name: true,
-                percent: true
-            }
+                percent: true,
+            },
         },
-        ...(extraQuery !== undefined ? extraQuery : {})
+        ...(extraQuery !== undefined ? extraQuery : {}),
     };
 }
 
@@ -56,7 +56,7 @@ export function createOrderFetcher(apiClient: ClientInterface) {
         extraQueryArgs?: any,
         onCustomer?: any,
         onOrderItem?: any,
-        extraQuery?: any
+        extraQuery?: any,
     ): Promise<{
         pageInfo: {
             hasNextPage: boolean;
@@ -73,26 +73,26 @@ export function createOrderFetcher(apiClient: ClientInterface) {
                 getAll: {
                     __args: {
                         customerIdentifier: customerIdentifier,
-                        ...(extraQueryArgs !== undefined ? extraQueryArgs : {})
+                        ...(extraQueryArgs !== undefined ? extraQueryArgs : {}),
                     },
                     pageInfo: {
                         hasPreviousPage: true,
                         hasNextPage: true,
                         startCursor: true,
                         endCursor: true,
-                        totalNodes: true
+                        totalNodes: true,
                     },
                     edges: {
                         cursor: true,
-                        node: buildQuery(onCustomer, onOrderItem, extraQuery)
-                    }
-                }
-            }
+                        node: buildQuery(onCustomer, onOrderItem, extraQuery),
+                    },
+                },
+            },
         };
         const response = await orderApi(jsonToGraphQLQuery({ query }));
         return {
             pageInfo: response.orders.getAll.pageInfo,
-            orders: response.orders.getAll.edges.map((edge: any) => edge.node)
+            orders: response.orders.getAll.edges.map((edge: any) => edge.node),
         };
     };
 
@@ -100,21 +100,21 @@ export function createOrderFetcher(apiClient: ClientInterface) {
         orderId: string,
         onCustomer?: any,
         onOrderItem?: any,
-        extraQuery?: any
+        extraQuery?: any,
     ): Promise<Order> => {
         const orderApi = apiClient.orderApi;
         const query = {
             orders: {
                 get: {
                     __args: {
-                        id: orderId
+                        id: orderId,
                     },
                     id: true,
                     createdAt: true,
                     updatedAt: true,
                     customer: {
                         identifier: true,
-                        ...(onCustomer !== undefined ? onCustomer : {})
+                        ...(onCustomer !== undefined ? onCustomer : {}),
                     },
                     cart: {
                         name: true,
@@ -126,32 +126,32 @@ export function createOrderFetcher(apiClient: ClientInterface) {
                             gross: true,
                             net: true,
                             discounts: {
-                                percent: true
-                            }
-                        }
+                                percent: true,
+                            },
+                        },
                     },
                     total: {
                         gross: true,
                         net: true,
                         currency: true,
                         discounts: {
-                            percent: true
+                            percent: true,
                         },
                         tax: {
                             name: true,
-                            percent: true
-                        }
+                            percent: true,
+                        },
                     },
-                    ...(extraQuery !== undefined ? extraQuery : {})
-                }
-            }
+                    ...(extraQuery !== undefined ? extraQuery : {}),
+                },
+            },
         };
         return (await orderApi(jsonToGraphQLQuery({ query })))?.orders?.get;
     };
 
     return {
         byId: fetchOrderById,
-        byCustomerIdentifier: fetchPaginatedOrdersByCustomerIdentifier
+        byCustomerIdentifier: fetchPaginatedOrdersByCustomerIdentifier,
     };
 }
 
@@ -166,19 +166,19 @@ export function createOrderPusher(apiClient: ClientInterface) {
                     create: {
                         __args: {
                             input: {
-                                ...intent
-                            }
+                                ...intent,
+                            },
                         },
                         id: true,
-                        createdAt: true
-                    }
-                }
-            }
+                        createdAt: true,
+                    },
+                },
+            },
         };
         const confirmation = await orderApi(jsonToGraphQLQuery(mutation));
         return {
             id: confirmation.orders.create.id,
-            createdAt: confirmation.orders.create.createdAt
+            createdAt: confirmation.orders.create.createdAt,
         };
     };
 }
@@ -186,7 +186,7 @@ export function createOrderPusher(apiClient: ClientInterface) {
 export function createOrderPaymentUpdater(apiClient: ClientInterface) {
     return async function updaptePaymentOrder(
         orderId: string,
-        intentOrder: UpdateOrderInputRequest
+        intentOrder: UpdateOrderInputRequest,
     ): Promise<OrderUpdatedConfirmation> {
         const intent = updateOrderInputRequest.parse(intentOrder);
         const pimApi = apiClient.pimApi;
@@ -197,19 +197,19 @@ export function createOrderPaymentUpdater(apiClient: ClientInterface) {
                         __args: {
                             id: orderId,
                             input: {
-                                ...intent
-                            }
+                                ...intent,
+                            },
                         },
                         id: true,
-                        updatedAt: true
-                    }
-                }
-            }
+                        updatedAt: true,
+                    },
+                },
+            },
         };
         const confirmation = await pimApi(jsonToGraphQLQuery(mutation));
         return {
             id: confirmation.order.update.id,
-            updatedAt: confirmation.order.update.updatedAt
+            updatedAt: confirmation.order.update.updatedAt,
         };
     };
 }

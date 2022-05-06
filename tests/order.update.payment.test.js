@@ -12,14 +12,14 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
                         properties: [
                             {
                                 property: 'payment_method',
-                                value: 'Plopix Coin'
+                                value: 'Plopix Coin',
                             },
                             {
                                 property: 'amount',
-                                value: '112358'
-                            }
-                        ]
-                    }
+                                value: '112358',
+                            },
+                        ],
+                    },
                 },
                 {
                     provider: 'custom',
@@ -27,16 +27,16 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
                         properties: [
                             {
                                 property: 'payment_method',
-                                value: 'Plopix Coin 2'
+                                value: 'Plopix Coin 2',
                             },
                             {
                                 property: 'amount',
-                                value: '90'
-                            }
-                        ]
-                    }
-                }
-            ]
+                                value: '90',
+                            },
+                        ],
+                    },
+                },
+            ],
         });
     } catch (exception) {
         expect(exception.errors[0].code).toBe('invalid_enum_value');
@@ -55,14 +55,14 @@ test('pimAPi: Update Order Payment', async () => {
                         properties: [
                             {
                                 property: 'payment_method',
-                                value: 'Plopix Coin'
+                                value: 'Plopix Coin',
                             },
                             {
                                 property: 'amountt',
-                                value: '112358'
-                            }
-                        ]
-                    }
+                                value: '112358',
+                            },
+                        ],
+                    },
                 },
                 {
                     provider: 'custom',
@@ -70,16 +70,16 @@ test('pimAPi: Update Order Payment', async () => {
                         properties: [
                             {
                                 property: 'payment_method',
-                                value: 'Plopix Coin 2'
+                                value: 'Plopix Coin 2',
                             },
                             {
                                 property: 'amountt',
-                                value: '90'
-                            }
-                        ]
-                    }
-                }
-            ]
+                                value: '90',
+                            },
+                        ],
+                    },
+                },
+            ],
         });
     } catch (exception) {
         expect(exception.code).toBe(403);

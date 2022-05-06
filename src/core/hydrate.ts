@@ -6,7 +6,7 @@ export type ProductHydrater = (
     language: string,
     extraQuery?: any,
     perProduct?: (item: string, index: number) => any,
-    perVariant?: (item: string, index: number) => any
+    perVariant?: (item: string, index: number) => any,
 ) => Promise<any>;
 
 function byPaths(client: ClientInterface): ProductHydrater {
@@ -15,7 +15,7 @@ function byPaths(client: ClientInterface): ProductHydrater {
         language: string,
         extraQuery?: any,
         perProduct?: (path: string, index: number) => any,
-        perVariant?: (path: string, index: number) => any
+        perVariant?: (path: string, index: number) => any,
     ): Promise<T> => {
         const productListQuery = paths
             .map((path: string, index: number) => {
@@ -29,26 +29,26 @@ function byPaths(client: ClientInterface): ProductHydrater {
                             __typeName: 'Product',
                             vatType: {
                                 name: true,
-                                percent: true
+                                percent: true,
                             },
                             variants: {
                                 sku: true,
                                 name: true,
                                 attributes: {
                                     attribute: true,
-                                    value: true
+                                    value: true,
                                 },
                                 priceVariants: {
                                     name: true,
                                     price: true,
                                     identifier: true,
-                                    currency: true
+                                    currency: true,
                                 },
-                                ...(perVariant !== undefined ? perVariant(path, index) : {})
+                                ...(perVariant !== undefined ? perVariant(path, index) : {}),
                             },
-                            ...(perProduct !== undefined ? perProduct(path, index) : {})
-                        }
-                    }
+                            ...(perProduct !== undefined ? perProduct(path, index) : {}),
+                        },
+                    },
                 };
             })
             .reduce((acc, curr) => {
@@ -57,7 +57,7 @@ function byPaths(client: ClientInterface): ProductHydrater {
 
         const query = {
             ...{ ...productListQuery },
-            ...(extraQuery !== undefined ? extraQuery : {})
+            ...(extraQuery !== undefined ? extraQuery : {}),
         };
 
         const fetch = client.catalogueApi;
@@ -96,8 +96,8 @@ function bySkus(client: ClientInterface): ProductHydrater {
                 {
                     skus: skus,
                     after: searchAfterCursor,
-                    language
-                }
+                    language,
+                },
             );
 
             const { edges, pageInfo } = searchAPIResponse.search || {};
@@ -119,14 +119,14 @@ function bySkus(client: ClientInterface): ProductHydrater {
         language: string,
         extraQuery?: any,
         perProduct?: (item: string, index: number) => any,
-        perVariant?: (item: string, index: number) => any
+        perVariant?: (item: string, index: number) => any,
     ): Promise<T> => {
         const paths = await getPathForSkus(skus, language);
         if (paths.length === 0) {
             const empty = skus
                 .map((sku: string, index: number) => {
                     return {
-                        [`product${index}`]: {}
+                        [`product${index}`]: {},
                     };
                 })
                 .reduce((acc, curr) => {
@@ -145,6 +145,6 @@ export function createProductHydrater(client: ClientInterface): {
 } {
     return {
         byPaths: byPaths(client),
-        bySkus: bySkus(client)
+        bySkus: bySkus(client),
     };
 }

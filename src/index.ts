@@ -18,7 +18,7 @@ import { createCatalogueFetcher } from './core/catalogue';
 export const CrystallizeClient = createClient({
     tenantIdentifier: typeof process === 'object' ? process?.env.CRYSTALLIZE_TENANT_IDENTIFIER || '' : '',
     accessTokenId: typeof process === 'object' ? process?.env.CRYSTALLIZE_ACCESS_TOKEN_ID || '' : '',
-    accessTokenSecret: typeof process === 'object' ? process?.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET || '' : ''
+    accessTokenSecret: typeof process === 'object' ? process?.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET || '' : '',
 });
 
 const navigationFetcher = createNavigationFetcher(CrystallizeClient);

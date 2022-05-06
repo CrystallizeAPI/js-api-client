@@ -2,7 +2,7 @@ const { createClient, createProductHydrater } = require('../dist/index.js');
 
 test('Hydrate Skus', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const hydrater = createProductHydrater(CrystallizeClient).bySkus;

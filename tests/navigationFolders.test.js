@@ -2,7 +2,7 @@ const { createNavigationFetcher, createClient } = require('../dist/index.js');
 
 test('Test Nav fetching Node: Shop', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
@@ -18,7 +18,7 @@ test('Test Nav fetching Node: Shop', async () => {
 
 test('Test Nav fetching Node: /', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
@@ -29,17 +29,17 @@ test('Test Nav fetching Node: /', async () => {
 
 test('Test Nav fetching Node: / + extra data', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
     const response = await fetch('/', 'en', 2, {
         tenant: {
             __args: {
-                language: 'en'
+                language: 'en',
             },
-            name: true
-        }
+            name: true,
+        },
     });
     expect(response.tree.path).toBe('/');
     expect(response.tree.children[0].path).toBe('/shop');
@@ -48,7 +48,7 @@ test('Test Nav fetching Node: / + extra data', async () => {
 
 test('Test Nav fetching Node: / + extra data + specific level', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
@@ -59,27 +59,27 @@ test('Test Nav fetching Node: / + extra data + specific level', async () => {
         {
             tenant: {
                 __args: {
-                    language: 'en'
+                    language: 'en',
                 },
-                name: true
-            }
+                name: true,
+            },
         },
         (level) => {
             switch (level) {
                 case 0:
                     return {
                         shape: {
-                            identifier: true
-                        }
+                            identifier: true,
+                        },
                     };
                 case 1:
                     return {
-                        createdAt: true
+                        createdAt: true,
                     };
                 default:
                     return {};
             }
-        }
+        },
     );
     expect(response.tree.path).toBe('/');
     expect(response.tree.children[0].path).toBe('/shop');

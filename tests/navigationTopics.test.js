@@ -2,7 +2,7 @@ const { createNavigationFetcher, createClient } = require('../dist/index.js');
 
 test('Test Nav fetching Topic: /', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byTopics;
@@ -16,7 +16,7 @@ test('Test Nav fetching Topic: /', async () => {
 
 test('Test Nav fetching Topic: /specials', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byTopics;
@@ -29,7 +29,7 @@ test('Test Nav fetching Topic: /specials', async () => {
 
 test('Test Nav fetching Topic: /specials + extra data + specific level', async () => {
     const CrystallizeClient = createClient({
-        tenantIdentifier: 'furniture'
+        tenantIdentifier: 'furniture',
     });
 
     const fetch = createNavigationFetcher(CrystallizeClient).byTopics;
@@ -40,38 +40,38 @@ test('Test Nav fetching Topic: /specials + extra data + specific level', async (
         {
             tenant: {
                 __args: {
-                    language: 'en'
+                    language: 'en',
                 },
-                name: true
-            }
+                name: true,
+            },
         },
         (level) => {
             switch (level) {
                 case 0:
                     return {
-                        parentId: true
+                        parentId: true,
                     };
                 case 1:
                     return {
                         parent: {
-                            path: true
+                            path: true,
                         },
                         items: {
                             edges: {
                                 node: {
-                                    path: true
-                                }
-                            }
-                        }
+                                    path: true,
+                                },
+                            },
+                        },
                     };
                 case 2:
                     return {
-                        createdAt: true
+                        createdAt: true,
                     };
                 default:
                     return {};
             }
-        }
+        },
     );
     expect(response.tree.path).toBe('/specials');
     expect(response.tree.children[0].name).toBe('Organic');

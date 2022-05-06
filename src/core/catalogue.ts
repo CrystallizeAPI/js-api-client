@@ -7,7 +7,7 @@ import {
     CatalogueFetcherGrapqhqlOnItem,
     CatalogueFetcherGrapqhqlOnProduct,
     componentType,
-    ComponentType
+    ComponentType,
 } from '../types/catalogue';
 
 export function createCatalogueFetcher(client: ClientInterface) {
@@ -21,7 +21,7 @@ export const catalogueFetcherGraphqlBuilder = {
     onProduct,
     onDocument,
     onFolder,
-    onComponent
+    onComponent,
 };
 
 function onItem(onItem?: any, c?: CatalogueFetcherGrapqhqlOnItem): any {
@@ -34,8 +34,8 @@ function onItem(onItem?: any, c?: CatalogueFetcherGrapqhqlOnItem): any {
         topics: {
             name: true,
             path: true,
-            ...(c?.onTopic ? c.onTopic : {})
-        }
+            ...(c?.onTopic ? c.onTopic : {}),
+        },
     };
 }
 
@@ -43,7 +43,7 @@ function onDocument(onDocument?: any, c?: CatalogueFetcherGrapqhqlOnDocument): a
     return {
         __typeName: 'Document',
         __typename: true,
-        ...onDocument
+        ...onDocument,
     };
 }
 
@@ -52,8 +52,8 @@ function onFolder(onFolder?: any, c?: CatalogueFetcherGrapqhqlOnFolder): any {
         if (c?.onChildren) {
             return {
                 chidlren: {
-                    ...c.onChildren
-                }
+                    ...c.onChildren,
+                },
             };
         }
         return {};
@@ -63,7 +63,7 @@ function onFolder(onFolder?: any, c?: CatalogueFetcherGrapqhqlOnFolder): any {
         __typeName: 'Folder',
         __typename: true,
         ...onFolder,
-        ...children()
+        ...children(),
     };
 }
 
@@ -72,8 +72,8 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
         if (c?.onPriceVariant) {
             return {
                 priceVariants: {
-                    ...c.onPriceVariant
-                }
+                    ...c.onPriceVariant,
+                },
             };
         }
         return {};
@@ -87,8 +87,8 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
                     sku: true,
                     price: true,
                     ...priceVariant(),
-                    ...(c?.onVariant ? c.onVariant : {})
-                }
+                    ...(c?.onVariant ? c.onVariant : {}),
+                },
             };
         }
         return {};
@@ -98,8 +98,8 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
         if (c?.onDefaultVariant) {
             return {
                 defaultVariant: {
-                    ...c.onDefaultVariant
-                }
+                    ...c.onDefaultVariant,
+                },
             };
         }
         return {};
@@ -111,10 +111,10 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
         ...onProduct,
         vatType: {
             name: true,
-            percent: true
+            percent: true,
         },
         ...defaultVariant(),
-        ...variants()
+        ...variants(),
     };
 }
 
@@ -124,15 +124,15 @@ function onComponent(id: string, type: ComponentType, onComponent?: any, c?: Cat
         [id]: {
             __aliasFor: 'component',
             __args: {
-                id
+                id,
             },
             content: {
                 __typename: true,
                 __on: {
                     __typeName: validType,
-                    ...onComponent
-                }
-            }
-        }
+                    ...onComponent,
+                },
+            },
+        },
     };
 }
