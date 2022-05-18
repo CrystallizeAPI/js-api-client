@@ -103,9 +103,9 @@ export interface Image {
     key: string;
     altText?: string;
     caption?: {
-        json: any;
-        html: string;
-        plainText: string;
+        json: any[];
+        html: string[];
+        plainText: string[];
     };
     meta?: MetaProperty[];
     metaProperty?: string; // shortcut to meta[n].value
