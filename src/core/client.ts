@@ -6,9 +6,8 @@ export interface ClientConfiguration {
     accessTokenSecret?: string;
 }
 
-type VariablesType = { [key: string]: string | number | string[] | number[] };
-
-type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise<T>;
+export type VariablesType = { [key: string]: string | number | string[] | number[] };
+export type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise<T>;
 
 export interface ClientInterface {
     catalogueApi: ApiCaller<any>;

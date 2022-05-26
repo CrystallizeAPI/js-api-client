@@ -1,7 +1,7 @@
 import { jsonToGraphQLQuery, VariableType } from 'json-to-graphql-query';
 import { ClientInterface } from './client';
 
-enum NavigationType {
+export enum NavigationType {
     Tree,
     Topics,
 }
@@ -87,18 +87,28 @@ function fetchTree<T>(client: ClientInterface, type: NavigationType): TreeFetche
         extraQuery?: any,
         perLevel?: (currentLevel: number) => any,
     ): Promise<T> => {
-        const fetch = client.catalogueApi;
-        const baseQuery = buildQueryFor(type, path);
-        const query = {
-            ...baseQuery,
-            tree: {
-                ...baseQuery.tree,
-                ...nestedQuery(depth, 1, perLevel),
-            },
-            ...(extraQuery !== undefined ? extraQuery : {}),
-        };
-        return fetch(jsonToGraphQLQuery({ query }), { language, path });
+        const query = buildNestedNavigationQuery(type, path, depth, extraQuery, perLevel);
+        return client.catalogueApi(query, { language, path });
     };
+}
+
+export function buildNestedNavigationQuery(
+    type: NavigationType,
+    path: string,
+    depth: number,
+    extraQuery?: any,
+    perLevel?: (currentLevel: number) => any,
+): string {
+    const baseQuery = buildQueryFor(type, path);
+    const query = {
+        ...baseQuery,
+        tree: {
+            ...baseQuery.tree,
+            ...nestedQuery(depth, 1, perLevel),
+        },
+        ...(extraQuery !== undefined ? extraQuery : {}),
+    };
+    return jsonToGraphQLQuery({ query });
 }
 
 export function createNavigationFetcher(client: ClientInterface): {
