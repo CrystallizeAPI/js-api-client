@@ -1,5 +1,3 @@
-import { CrystallizeSearcher } from '../..';
-import { catalogueFetcherGraphqlBuilder } from '../catalogue';
 import { MassClientInterface } from '../massCallClient';
 import { buildNestedNavigationQuery, NavigationType } from '../navigation';
 import { createSearcher } from '../search';
@@ -144,7 +142,7 @@ export const createDumper = (apiClient: MassClientInterface, options: DumperOpti
             // grids
             grids.forEach(({ language, requestId }: { language: string; requestId: string }) => {
                 if (results[requestId]) {
-                    function handleRow(row: any) {
+                    const handleRow = (row: any) => {
                         return {
                             columns: row.columns.map((c: any) => ({
                                 layout: c.layout,
@@ -156,13 +154,13 @@ export const createDumper = (apiClient: MassClientInterface, options: DumperOpti
                                       },
                             })),
                         };
-                    }
-                    function handleGrid(grid: any): any {
+                    };
+                    const handleGrid = (grid: any): any => {
                         return {
                             ...grid,
                             rows: grid.rows?.map(handleRow) || [],
                         };
-                    }
+                    };
                     spec.grids[language] = results[requestId].grid?.getMany?.map(handleGrid) || [];
                 }
             });

@@ -77,7 +77,7 @@ export function createMassCallClient(
     let increment = options.initialSpawn ?? 1;
     const sleeper = createFibonnaciSleeper();
 
-    console.log('⚠️ MassCallClient is experimental and may not work as expected.');
+    console.log('⚠️   MassCallClient is experimental and may not work as expected.');
 
     const execute = async () => {
         failedPromises = [];

@@ -22,7 +22,7 @@ async function post<T>(
     config: ClientConfiguration,
     query: string,
     variables?: VariablesType,
-    init?: RequestInit,
+    init?: RequestInit | any | undefined,
 ): Promise<T> {
     try {
         const response = await fetch(path, {

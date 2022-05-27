@@ -1,6 +1,10 @@
-const { CrystallizeSearcher } = require('../dist/index.js');
+const { createSearcher, createClient } = require('../dist/index.js');
 
 test('Search Query Test', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furniture',
+    });
+
     const nodeQuery = {
         name: true,
         path: true,
@@ -14,7 +18,7 @@ test('Search Query Test', async () => {
     let count;
 
     count = 0;
-    for await (const item of CrystallizeSearcher.search('en', nodeQuery, filter, orderBy, pageInfo, {
+    for await (const item of createSearcher(CrystallizeClient).search('en', nodeQuery, filter, orderBy, pageInfo, {
         total: 14,
         perPage: 5,
     })) {
@@ -24,7 +28,7 @@ test('Search Query Test', async () => {
     expect(count).toBe(14);
 
     count = 0;
-    for await (const item of CrystallizeSearcher.search('en', nodeQuery, filter, orderBy, pageInfo, {
+    for await (const item of createSearcher(CrystallizeClient).search('en', nodeQuery, filter, orderBy, pageInfo, {
         total: 14,
         perPage: 10,
     })) {
