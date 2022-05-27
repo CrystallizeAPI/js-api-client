@@ -1,6 +1,8 @@
+import { CrystallizeSearcher } from '../..';
 import { catalogueFetcherGraphqlBuilder } from '../catalogue';
 import { MassClientInterface } from '../massCallClient';
 import { buildNestedNavigationQuery, NavigationType } from '../navigation';
+import { createSearcher } from '../search';
 import { getTenantBasicQuery, getTenantQueries } from './createSpecQuery';
 
 export type DumperOptions = {
@@ -86,21 +88,7 @@ export const createDumper = (apiClient: MassClientInterface, options: DumperOpti
             };
         });
 
-        // big todo here, maybe get the parents, then loop through the children
-        // use generator etc.
-        const items = spec.languages.availableLanguages.map((language: any) => {
-            const builder = catalogueFetcherGraphqlBuilder;
-            const query = buildNestedNavigationQuery(NavigationType.Tree, '/', options.treeDepth ?? 5, {}, () => {
-                return {
-                    id: true,
-                };
-            });
-            return {
-                language: language.code,
-                requestId: apiClient.enqueue.catalogueApi(query, { language: language.code, path: '/' }),
-            };
-        });
-
+        // 1. we start by the simple stuff
         do {
             const results = apiClient.hasFailed() ? await apiClient.retry() : await apiClient.execute();
 
@@ -163,9 +151,9 @@ export const createDumper = (apiClient: MassClientInterface, options: DumperOpti
                                 item: !c.item
                                     ? null
                                     : {
-                                        externalReference: c.item.tree.externalReference,
-                                        cataloguePath: c.item.tree.path,
-                                    },
+                                          externalReference: c.item.tree.externalReference,
+                                          cataloguePath: c.item.tree.path,
+                                      },
                             })),
                         };
                     }
@@ -178,15 +166,34 @@ export const createDumper = (apiClient: MassClientInterface, options: DumperOpti
                     spec.grids[language] = results[requestId].grid?.getMany?.map(handleGrid) || [];
                 }
             });
+        } while (apiClient.hasFailed());
+        apiClient.reset();
 
-            // items
+        //2. the Items
+        const search = createSearcher(apiClient).search;
+
+        let items: { language: string; requestId: string }[] = [];
+        for (const language of spec.languages.availableLanguages) {
+            // we prepare the language in the spec
+            spec.items[language.code] = [];
+            for await (const node of search(language.code, { path: true })) {
+                items.push({
+                    language: language.code,
+                    requestId: apiClient.enqueue.catalogueApi(queries.GET_ITEM, {
+                        language: language.code,
+                        path: node.path,
+                    }),
+                });
+            }
+        }
+        do {
+            const results = apiClient.hasFailed() ? await apiClient.retry() : await apiClient.execute();
             items.forEach(({ language, requestId }: { language: string; requestId: string }) => {
                 if (results[requestId]) {
-                    spec.items[language] = results[requestId].tree ?? [];
+                    spec.items[language].push(results[requestId]);
                 }
             });
         } while (apiClient.hasFailed());
-
         return spec;
     };
     return {

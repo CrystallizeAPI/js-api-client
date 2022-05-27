@@ -13,11 +13,17 @@ export type MassCallClientBatch = {
 };
 export type QueuedApiCaller = (query: string, variables?: VariablesType) => string;
 
-export type MassClientInterface = {
+export type MassClientInterface = ClientInterface & {
     execute: () => Promise<any>;
+    reset: () => void;
     hasFailed: () => boolean;
     failureCount: () => number;
     retry: () => Promise<any>;
+    catalogueApi: ApiCaller<any>;
+    searchApi: ApiCaller<any>;
+    orderApi: ApiCaller<any>;
+    subscriptionApi: ApiCaller<any>;
+    pimApi: ApiCaller<any>;
     enqueue: {
         catalogueApi: QueuedApiCaller;
         searchApi: QueuedApiCaller;
@@ -70,6 +76,8 @@ export function createMassCallClient(
     const maxConcurrent = options.maxSpawn ?? 5;
     let increment = options.initialSpawn ?? 1;
     const sleeper = createFibonnaciSleeper();
+
+    console.log('⚠️ MassCallClient is experimental and may not work as expected.');
 
     const execute = async () => {
         failedPromises = [];
@@ -157,6 +165,11 @@ export function createMassCallClient(
     let counter = 1;
     return {
         execute,
+        reset: () => {
+            promises = [];
+            seek = 0;
+            failedPromises = [];
+        },
         hasFailed: () => failedPromises.length > 0,
         failureCount: () => failedPromises.length,
         retry: async () => {
@@ -165,6 +178,11 @@ export function createMassCallClient(
             seek = 0;
             return await execute();
         },
+        catalogueApi: client.catalogueApi,
+        searchApi: client.searchApi,
+        orderApi: client.orderApi,
+        subscriptionApi: client.subscriptionApi,
+        pimApi: client.pimApi,
         enqueue: {
             catalogueApi: (query: string, variables?: VariablesType): string => {
                 const key = `catalogueApi-${counter++}`;

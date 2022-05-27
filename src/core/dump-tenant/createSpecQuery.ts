@@ -184,15 +184,8 @@ export const getTenantQueries = (tenantId: string) => {
           max
         }
       }`,
-        GET_ROOT_ITEMS: `query GET_ROOT_CATALOGUE_ITEMS ($language: String!, $path: String!, $version: VersionLabel!) {
-  catalogue(language: $language, path: $path, version: $version) {
-    children {
-      path
-    }
-  }
-}`,
-        GET_ITEM: `query GET_ITEM ($language: String!, $path: String!, $version: VersionLabel!) {
-  catalogue(language: $language, path: $path, version: $version) {
+        GET_ITEM: `query GET_ITEM ($language: String!, $path: String!) {
+  catalogue(language: $language, path: $path) {
     ...item
     ...product
   }
@@ -436,29 +429,5 @@ fragment subscriptionPlanPricing on ProductVariantSubscriptionPlanPricing {
   }
 }
 `,
-        GET_ITEM_CHILDREN: `query GET_ITEM_CHILDREN_PAGE (
-  $path: String!,
-  $language: String!,
-  $version: VersionLabel!,
-  $after: String,
-  $pageSize: Int
-  ) {
-  catalogue(path: $path, language: $language, version: $version) {
-    subtree (
-      first: $pageSize
-      after: $after
-    ) {
-      pageInfo {
-        endCursor
-        hasNextPage
-      }
-      edges {
-        node {
-          path
-        }
-      }
-    }
-  }
-}`,
     };
 };
