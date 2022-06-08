@@ -8,6 +8,7 @@ export enum NavigationType {
 
 function nestedQuery(depth: number, start: number = 1, extraQuery?: (currentLevel: number) => any): any {
     const props = {
+        id: true,
         name: true,
         path: true,
         ...(extraQuery !== undefined ? extraQuery(start - 1) : {}),
