@@ -17,43 +17,38 @@ function byPaths(client: ClientInterface): ProductHydrater {
         perProduct?: (path: string, index: number) => any,
         perVariant?: (path: string, index: number) => any,
     ): Promise<T> => {
-        const productListQuery = paths
-            .map((path: string, index: number) => {
-                return {
-                    [`product${index}`]: {
-                        __aliasFor: 'catalogue',
-                        __args: { path, language },
+        const productListQuery = paths.reduce((acc, path: string, index: number) => {
+            acc[`product${index}`] = {
+                __aliasFor: 'catalogue',
+                __args: { path, language },
+                name: true,
+                path: true,
+                __on: {
+                    __typeName: 'Product',
+                    vatType: {
                         name: true,
-                        path: true,
-                        __on: {
-                            __typeName: 'Product',
-                            vatType: {
-                                name: true,
-                                percent: true,
-                            },
-                            variants: {
-                                sku: true,
-                                name: true,
-                                attributes: {
-                                    attribute: true,
-                                    value: true,
-                                },
-                                priceVariants: {
-                                    name: true,
-                                    price: true,
-                                    identifier: true,
-                                    currency: true,
-                                },
-                                ...(perVariant !== undefined ? perVariant(path, index) : {}),
-                            },
-                            ...(perProduct !== undefined ? perProduct(path, index) : {}),
-                        },
+                        percent: true,
                     },
-                };
-            })
-            .reduce((acc, curr) => {
-                return { ...acc, ...curr };
-            }, {});
+                    variants: {
+                        sku: true,
+                        name: true,
+                        attributes: {
+                            attribute: true,
+                            value: true,
+                        },
+                        priceVariants: {
+                            name: true,
+                            price: true,
+                            identifier: true,
+                            currency: true,
+                        },
+                        ...(perVariant !== undefined ? perVariant(path, index) : {}),
+                    },
+                    ...(perProduct !== undefined ? perProduct(path, index) : {}),
+                },
+            };
+            return acc;
+        }, {} as any);
 
         const query = {
             ...{ ...productListQuery },
@@ -73,26 +68,26 @@ function bySkus(client: ClientInterface): ProductHydrater {
         async function getNextSearchPage() {
             const searchAPIResponse = await search(
                 `query GET_PRODUCTS_BY_SKU ($skus: [String!], $after: String, $language: String!) {
-            search (
-                after: $after
-                language: $language
-                filter: {
-                    include: {
-                        skus: $skus
+                    search (
+                        after: $after
+                        language: $language
+                        filter: {
+                            include: {
+                                skus: $skus
+                            }
+                        }
+                    ) {
+                        pageInfo {
+                            endCursor
+                            hasNextPage
+                        }
+                        edges {
+                            node {
+                                path
+                            }
+                        }
                     }
-                }
-            ) {
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                edges {
-                    node {
-                        path
-                    }
-                }
-            }
-        }`,
+                }`,
                 {
                     skus: skus,
                     after: searchAfterCursor,
@@ -123,15 +118,10 @@ function bySkus(client: ClientInterface): ProductHydrater {
     ): Promise<T> => {
         const paths = await getPathForSkus(skus, language);
         if (paths.length === 0) {
-            const empty = skus
-                .map((sku: string, index: number) => {
-                    return {
-                        [`product${index}`]: {},
-                    };
-                })
-                .reduce((acc, curr) => {
-                    return { ...acc, ...curr };
-                });
+            const empty = skus.reduce((acc, sku, index) => {
+                acc[`product${index}`] = {};
+                return acc;
+            }, {} as any);
 
             return empty as any;
         }
