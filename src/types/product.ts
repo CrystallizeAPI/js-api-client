@@ -3,6 +3,7 @@ export interface Item {
     name?: string;
     path?: string;
     externalReference?: string;
+    topics?: Topic[];
 }
 
 export interface Product extends Item {
@@ -119,4 +120,29 @@ export interface ImageVariant {
     width: number;
     height?: number;
     size?: number;
+}
+
+export interface Topic {
+    id: string;
+    name: string;
+    path: string;
+    language?: string;
+    parentId?: string;
+    parent: Topic;
+    children: Topic[];
+    childCount: number;
+    createdAt?: Date;
+    items: {
+        edges: {
+            node: Item;
+            cursor: string;
+        };
+        pageInfo: {
+            hasNextPage: boolean;
+            hasPreviousPage: boolean;
+            startCursor: string;
+            endCursor: string;
+            totalNodes: number;
+        };
+    };
 }

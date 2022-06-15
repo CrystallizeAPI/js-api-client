@@ -92,7 +92,7 @@ export function createOrderFetcher(apiClient: ClientInterface) {
         const response = await orderApi(jsonToGraphQLQuery({ query }));
         return {
             pageInfo: response.orders.getAll.pageInfo,
-            orders: response.orders.getAll.edges.map((edge: any) => edge.node),
+            orders: response.orders.getAll?.edges?.map((edge: any) => edge.node) || [],
         };
     };
 
