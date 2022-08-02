@@ -183,6 +183,7 @@ export function createMassCallClient(
         orderApi: client.orderApi,
         subscriptionApi: client.subscriptionApi,
         pimApi: client.pimApi,
+        config: client.config,
         enqueue: {
             catalogueApi: (query: string, variables?: VariablesType): string => {
                 const key = `catalogueApi-${counter++}`;
