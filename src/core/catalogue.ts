@@ -118,10 +118,18 @@ function onProduct(onProduct?: any, c?: CatalogueFetcherGrapqhqlOnProduct): any 
     };
 }
 
+/**
+ * Convert hyphenated string to camel cased string
+ * @param id A string with potentially hyphens in Item
+ * @returns A camel cased string
+ */
+const camelCaseHyphens = (id: string): string => id.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+
 function onComponent(id: string, type: ComponentType, onComponent?: any, c?: CatalogueFetcherGrapqhqlOnComponent): any {
     const validType = componentType.parse(type);
+    const aliasName = camelCaseHyphens(id);
     return {
-        [id]: {
+        [aliasName]: {
             __aliasFor: 'component',
             __args: {
                 id,
