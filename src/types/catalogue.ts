@@ -12,6 +12,10 @@ export type CatalogueFetcherGrapqhqlOnProduct = {
 
 export type CatalogueFetcherGrapqhqlOnDocument = {};
 
+export type CatalogueFetcherGrapqhqlOnSubscriptionPlan = {
+    onPeriod: (name: string) => any;
+};
+
 export type CatalogueFetcherGrapqhqlOnFolder = {
     onChildren?: any;
 };

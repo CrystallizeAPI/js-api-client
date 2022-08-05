@@ -4,11 +4,13 @@ export * from './core/hydrate';
 export * from './core/catalogue';
 export * from './core/order';
 export * from './core/search';
+export * from './core/subscription';
 export * from './types/product';
 export * from './types/order';
 export * from './types/payment';
 export * from './types/components';
 export * from './types/search';
+export * from './types/subscription';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';
@@ -17,6 +19,7 @@ import { createProductHydrater } from './core/hydrate';
 import { createOrderPusher, createOrderPaymentUpdater, createOrderFetcher } from './core/order';
 import { createCatalogueFetcher } from './core/catalogue';
 import { createSearcher } from './core/search';
+import { createSubscriptionContractManager } from './core/subscription';
 
 export const CrystallizeClient = createClient({
     tenantId: globalThis?.process?.env?.CRYSTALLIZE_TENANT_ID ?? '',
@@ -42,3 +45,5 @@ export const CrystallizeSearcher = createSearcher(CrystallizeClient);
 const orderFetcher = createOrderFetcher(CrystallizeClient);
 export const CrystallizeOrderFetcherById = orderFetcher.byId;
 export const CrystallizeOrderFetcherByCustomerIdentifier = orderFetcher.byCustomerIdentifier;
+
+export const CrystallizeSubscriptionContractManager = createSubscriptionContractManager(CrystallizeClient);

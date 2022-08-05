@@ -15,26 +15,26 @@ import {
 } from './payment';
 import { SubscriptionPeriodUnit, VatInfo } from './product';
 
-export const orderItemMeteredVariableInput = z
+export const orderItemMeteredVariableInputRequest = z
     .object({
         id: z.string(),
         usage: z.number(),
         price: z.number(),
     })
     .strict();
-export type OrderItemMeteredVariableInput = z.infer<typeof orderItemMeteredVariableInput>;
+export type OrderItemMeteredVariableInputRequest = z.infer<typeof orderItemMeteredVariableInputRequest>;
 
-export const orderItemSubscriptionInput = z
+export const orderItemSubscriptionInputRequest = z
     .object({
         name: z.string().optional(),
         period: z.number(),
         unit: z.enum(['minute', 'hour', 'day', 'week', 'month', 'year']).transform((val) => new EnumType(val)),
         start: z.date().optional(),
         end: z.date().optional(),
-        meteredVariables: z.array(orderItemMeteredVariableInput).optional(),
+        meteredVariables: z.array(orderItemMeteredVariableInputRequest).optional(),
     })
     .strict();
-export type OrderItemSubscriptionInput = z.infer<typeof orderItemSubscriptionInput>;
+export type OrderItemSubscriptionInputRequest = z.infer<typeof orderItemSubscriptionInputRequest>;
 
 export const priceInputRequest = z
     .object({
@@ -70,7 +70,7 @@ export const orderItemInputRequest = z
         productVairantId: z.string().optional(),
         imageUrl: z.string().optional(),
         quantity: z.number(),
-        subscription: orderItemSubscriptionInput.optional(),
+        subscription: orderItemSubscriptionInputRequest.optional(),
         subscriptionContractId: z.string().optional(),
         price: priceInputRequest.optional(),
         subTotal: priceInputRequest.optional(),

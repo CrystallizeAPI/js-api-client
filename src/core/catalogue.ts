@@ -6,6 +6,7 @@ import {
     CatalogueFetcherGrapqhqlOnFolder,
     CatalogueFetcherGrapqhqlOnItem,
     CatalogueFetcherGrapqhqlOnProduct,
+    CatalogueFetcherGrapqhqlOnSubscriptionPlan,
     componentType,
     ComponentType,
 } from '../types/catalogue';
@@ -22,6 +23,7 @@ export const catalogueFetcherGraphqlBuilder = {
     onDocument,
     onFolder,
     onComponent,
+    onSubscriptionPlan,
 };
 
 function onItem(onItem?: any, c?: CatalogueFetcherGrapqhqlOnItem): any {
@@ -140,6 +142,47 @@ function onComponent(id: string, type: ComponentType, onComponent?: any, c?: Cat
                     __typeName: validType,
                     ...onComponent,
                 },
+            },
+        },
+    };
+}
+
+function onSubscriptionPlan(c?: CatalogueFetcherGrapqhqlOnSubscriptionPlan): any {
+    const period = (name: string) => {
+        return {
+            ...(c?.onPeriod ? c.onPeriod(name) : {}),
+            priceVariants: {
+                identifier: true,
+                name: true,
+                price: true,
+                currency: true,
+            },
+            meteredVariables: {
+                id: true,
+                name: true,
+                identifier: true,
+                tierType: true,
+                tiers: {
+                    threshold: true,
+                    priceVariants: {
+                        identifier: true,
+                        name: true,
+                        price: true,
+                        currency: true,
+                    },
+                },
+            },
+        };
+    };
+    return {
+        subscriptionPlans: {
+            identifier: true,
+            name: true,
+            periods: {
+                id: true,
+                name: true,
+                initial: period('initial'),
+                recurring: period('recurring'),
             },
         },
     };

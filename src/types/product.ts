@@ -91,7 +91,7 @@ export interface ProductVariantSubscriptionMeteredVariable {
 }
 
 export interface ProductVariantSubscriptionPlanTier {
-    treshold: number;
+    threshold: number;
     price?: number; //shortcut to ProductPriceVariant[n].price
     priceVariants?: ProductPriceVariant[];
 }
