@@ -7,7 +7,7 @@ export type ClientConfiguration = {
     accessTokenSecret?: string;
 };
 
-export type VariablesType = { [key: string]: string | number | string[] | number[] };
+export type VariablesType = Record<string, any>;
 export type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise<T>;
 
 export type ClientInterface = {
