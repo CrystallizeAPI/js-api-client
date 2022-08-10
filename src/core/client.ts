@@ -51,7 +51,18 @@ async function post<T>(
                 errors: json.errors || {},
             };
         }
-        return <T>(await response.json()).data;
+        // we still need to check for error as the API can return 200 with errors
+        const json = await response.json();
+        if (json.errors) {
+            throw {
+                code: 400,
+                statusText: 'Error was returned from the API',
+                message: json.errors[0].message,
+                errors: json.errors || {},
+            };
+        }
+
+        return <T>json.data;
     } catch (exception) {
         throw exception;
     }
