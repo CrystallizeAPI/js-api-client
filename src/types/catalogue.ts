@@ -26,6 +26,7 @@ export const componentType = z
     .enum([
         'Boolean',
         'ComponentChoice',
+        'ContentChunk',
         'Datetime',
         'File',
         'GridRelations',

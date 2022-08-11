@@ -35,6 +35,11 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
                         __args: {
                             input: {
                                 ...intent,
+                                status: {
+                                    ...intent.status,
+                                    renewAt: intent.status.renewAt.toISOString(),
+                                    activeUntil: intent.status.renewAt.toISOString(),
+                                },
                             },
                         },
                         id: true,
