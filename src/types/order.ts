@@ -41,10 +41,12 @@ export const priceInputRequest = z
         gross: z.number().optional(),
         net: z.number().optional(),
         currency: z.string(),
-        discount: z
-            .object({
-                percent: z.number().optional(),
-            })
+        discounts: z
+            .array(
+                z.object({
+                    percent: z.number().optional(),
+                }),
+            )
             .optional(),
         tax: z.object({
             name: z.string().optional(),
