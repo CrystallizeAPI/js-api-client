@@ -38,7 +38,7 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
                                 status: {
                                     ...intent.status,
                                     renewAt: intent.status.renewAt.toISOString(),
-                                    activeUntil: intent.status.renewAt.toISOString(),
+                                    activeUntil: intent.status.activeUntil.toISOString(),
                                 },
                             },
                         },
@@ -72,7 +72,7 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
                             },
                         },
                         id: true,
-                        createdAt: true,
+                        updatedAt: true,
                         ...(extraResultQuery !== undefined ? extraResultQuery : {}),
                     },
                 },

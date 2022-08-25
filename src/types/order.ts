@@ -1,5 +1,6 @@
 import { EnumType } from 'json-to-graphql-query';
 import { z } from 'zod';
+import { OrderCustomer, orderCustomerInputRequest } from './customer';
 import {
     CashPayment,
     cashPaymentInputRequest,
@@ -81,39 +82,6 @@ export const orderItemInputRequest = z
     .strict();
 export type OrderItemInputRequest = z.infer<typeof orderItemInputRequest>;
 
-export const addressInputRequest = z
-    .object({
-        type: z.enum(['delivery', 'billing', 'other']).transform((val) => new EnumType(val)),
-        firstName: z.string().optional(),
-        middleName: z.string().optional(),
-        lastName: z.string().optional(),
-        street: z.string().optional(),
-        street2: z.string().optional(),
-        streetNumber: z.string().optional(),
-        postalCode: z.string().optional(),
-        city: z.string().optional(),
-        state: z.string().optional(),
-        country: z.string().optional(),
-        phone: z.string().optional(),
-        email: z.string().optional(),
-    })
-    .strict();
-export type AddressInputRequest = z.infer<typeof addressInputRequest>;
-
-export const customerInputRequest = z
-    .object({
-        identifier: z.string().optional(),
-        firstName: z.string().optional(),
-        middleName: z.string().optional(),
-        lastName: z.string().optional(),
-        birthDate: z.date().optional(),
-        companyName: z.string().optional(),
-        taxNumber: z.string().optional(),
-        addresses: z.array(addressInputRequest).optional(),
-    })
-    .strict();
-export type CustomerInputRequest = z.infer<typeof customerInputRequest>;
-
 export const paymentInputRequest = z
     .object({
         provider: paymentProvider,
@@ -128,7 +96,7 @@ export type PaymentInputRequest = z.infer<typeof paymentInputRequest>;
 
 export const updateOrderInputRequest = z
     .object({
-        customer: customerInputRequest.optional(),
+        customer: orderCustomerInputRequest.optional(),
         cart: z.array(orderItemInputRequest).optional(),
         payment: z.array(paymentInputRequest).optional(),
         total: priceInputRequest.optional(),
@@ -140,7 +108,7 @@ export type UpdateOrderInputRequest = z.infer<typeof updateOrderInputRequest>;
 
 export const createOrderInputRequest = updateOrderInputRequest
     .extend({
-        customer: customerInputRequest,
+        customer: orderCustomerInputRequest,
         cart: z.array(orderItemInputRequest),
         createdAt: z.date().optional(),
     })
@@ -162,7 +130,7 @@ export interface Order {
     createdAt: Date;
     updatedAt: Date;
     cart: OrderItem[];
-    customer: Customer;
+    customer: OrderCustomer;
     payment?: Payment[];
     total?: Price;
     additionnalInformation?: string;
@@ -182,12 +150,6 @@ export interface OrderItem {
     subTotal?: Price;
     meta?: OrderMetadata[];
 }
-export type Address = AddressInputRequest;
-
-export type Customer = Omit<CustomerInputRequest, 'addresses'> & {
-    addresses: Address[];
-};
-
 export type Payment = KlarnaPayment | PaypalPayment | StripePayment | CashPayment | CustomPayment;
 
 export interface Price {

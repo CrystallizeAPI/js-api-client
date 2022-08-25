@@ -5,12 +5,15 @@ export * from './core/catalogue';
 export * from './core/order';
 export * from './core/search';
 export * from './core/subscription';
+export * from './core/customer';
 export * from './types/product';
 export * from './types/order';
 export * from './types/payment';
 export * from './types/components';
 export * from './types/search';
 export * from './types/subscription';
+export * from './types/address';
+export * from './types/customer';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';
@@ -20,6 +23,7 @@ import { createOrderPusher, createOrderPaymentUpdater, createOrderFetcher } from
 import { createCatalogueFetcher } from './core/catalogue';
 import { createSearcher } from './core/search';
 import { createSubscriptionContractManager } from './core/subscription';
+import { createCustomerManager } from './core/customer';
 
 export const CrystallizeClient = createClient({
     tenantId: globalThis?.process?.env?.CRYSTALLIZE_TENANT_ID ?? '',
@@ -47,3 +51,4 @@ export const CrystallizeOrderFetcherById = orderFetcher.byId;
 export const CrystallizeOrderFetcherByCustomerIdentifier = orderFetcher.byCustomerIdentifier;
 
 export const CrystallizeSubscriptionContractManager = createSubscriptionContractManager(CrystallizeClient);
+export const CrystallizeCustomerManager = createCustomerManager(CrystallizeClient);

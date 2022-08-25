@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EnumType } from 'json-to-graphql-query';
-import { addressInputRequest, paymentInputRequest } from './order';
+import { paymentInputRequest } from './order';
+import { addressInputRequest } from './address';
 
 export const subscriptionContractMetadataInputRequest = z
     .object({
