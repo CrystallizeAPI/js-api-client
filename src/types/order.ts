@@ -69,7 +69,7 @@ export const orderItemInputRequest = z
         name: z.string(),
         sku: z.string().optional(),
         productId: z.string().optional(),
-        productVairantId: z.string().optional(),
+        productVariantId: z.string().optional(),
         imageUrl: z.string().optional(),
         quantity: z.number(),
         subscription: orderItemSubscriptionInputRequest.optional(),
