@@ -15,6 +15,7 @@ export * from './types/search';
 export * from './types/subscription';
 export * from './types/address';
 export * from './types/customer';
+export * from './types/signature';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';

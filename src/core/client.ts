@@ -5,6 +5,7 @@ export type ClientConfiguration = {
     tenantId?: string;
     accessTokenId?: string;
     accessTokenSecret?: string;
+    sessionId?: string;
 };
 
 export type VariablesType = Record<string, any>;
@@ -16,7 +17,7 @@ export type ClientInterface = {
     orderApi: ApiCaller<any>;
     subscriptionApi: ApiCaller<any>;
     pimApi: ApiCaller<any>;
-    config: ClientConfiguration;
+    config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId'>;
 };
 
 async function post<T>(
@@ -27,16 +28,26 @@ async function post<T>(
     init?: RequestInit | any | undefined,
 ): Promise<T> {
     try {
+        const commonHeaders = {
+            'Content-type': 'application/json; charset=UTF-8',
+            Accept: 'application/json',
+        };
+        const headers = {
+            ...commonHeaders,
+            ...(config.sessionId
+                ? { Cookie: 'connect.sid=' + config.sessionId }
+                : {
+                      'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
+                      'X-Crystallize-Access-Token-Secret': config.accessTokenSecret || '',
+                  }),
+        };
+        const body = JSON.stringify({ query, variables });
+
         const response = await fetch(path, {
             ...init,
             method: 'POST',
-            headers: {
-                'Content-type': 'application/json; charset=UTF-8',
-                Accept: 'application/json',
-                'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
-                'X-Crystallize-Access-Token-Secret': config.accessTokenSecret || '',
-            },
-            body: JSON.stringify({ query, variables }),
+            headers,
+            body,
         });
 
         if (response.ok && 204 === response.status) {
@@ -97,6 +108,9 @@ export function createClient(configuration: ClientConfiguration): ClientInterfac
         orderApi: createApiCaller(apiHost([identifier, 'orders']), configuration),
         subscriptionApi: createApiCaller(apiHost([identifier, 'subscriptions']), configuration),
         pimApi: createApiCaller(apiHost(['graphql'], 'pim'), configuration),
-        config: configuration,
+        config: {
+            tenantId: configuration.tenantId,
+            tenantIdentifier: configuration.tenantIdentifier,
+        },
     };
 }
