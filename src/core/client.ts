@@ -6,6 +6,7 @@ export type ClientConfiguration = {
     accessTokenId?: string;
     accessTokenSecret?: string;
     sessionId?: string;
+    origin?: string;
 };
 
 export type VariablesType = Record<string, any>;
@@ -90,9 +91,6 @@ function createApiCaller(uri: string, configuration: ClientConfiguration): ApiCa
     };
 }
 
-const apiHost = (path: string[], prefix: 'api' | 'pim' = 'api') =>
-    `https://${prefix}.crystallize.com/${path.join('/')}`;
-
 /**
  * Create one api client for each api endpoint Crystallize offers (catalogue, search, order, subscription, pim).
  *
@@ -101,6 +99,8 @@ const apiHost = (path: string[], prefix: 'api' | 'pim' = 'api') =>
  */
 export function createClient(configuration: ClientConfiguration): ClientInterface {
     const identifier = configuration.tenantIdentifier;
+    const origin = configuration.origin || '.crystallize.com';
+    const apiHost = (path: string[], prefix: 'api' | 'pim' = 'api') => `https://${prefix}${origin}/${path.join('/')}`;
 
     return {
         catalogueApi: createApiCaller(apiHost([identifier, 'catalogue']), configuration),
