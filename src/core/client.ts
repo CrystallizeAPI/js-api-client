@@ -18,7 +18,7 @@ export type ClientInterface = {
     orderApi: ApiCaller<any>;
     subscriptionApi: ApiCaller<any>;
     pimApi: ApiCaller<any>;
-    config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId'>;
+    config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
 };
 
 async function post<T>(
@@ -111,6 +111,7 @@ export function createClient(configuration: ClientConfiguration): ClientInterfac
         config: {
             tenantId: configuration.tenantId,
             tenantIdentifier: configuration.tenantIdentifier,
+            origin: configuration.origin,
         },
     };
 }
