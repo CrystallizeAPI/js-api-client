@@ -7,6 +7,7 @@ export * from './core/order';
 export * from './core/search';
 export * from './core/subscription';
 export * from './core/customer';
+export * from './core/pricing';
 export * from './types/product';
 export * from './types/order';
 export * from './types/payment';
@@ -16,6 +17,7 @@ export * from './types/subscription';
 export * from './types/address';
 export * from './types/customer';
 export * from './types/signature';
+export * from './types/pricing';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';
