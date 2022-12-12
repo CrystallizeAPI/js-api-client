@@ -5,6 +5,7 @@ export type ClientConfiguration = {
     tenantId?: string;
     accessTokenId?: string;
     accessTokenSecret?: string;
+    staticAuthToken?: string;
     sessionId?: string;
     origin?: string;
 };
@@ -21,6 +22,23 @@ export type ClientInterface = {
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
 };
 
+function authenticationHeaders(config: ClientConfiguration) {
+    if (config.sessionId) {
+        return {
+            Cookie: 'connect.sid=' + config.sessionId,
+        };
+    }
+    if (config.staticAuthToken) {
+        return {
+            'X-Crystallize-Static-Auth-Token': config.staticAuthToken,
+        };
+    }
+    return {
+        'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
+        'X-Crystallize-Access-Token-Secret': config.accessTokenSecret || '',
+    };
+}
+
 async function post<T>(
     path: string,
     config: ClientConfiguration,
@@ -35,12 +53,7 @@ async function post<T>(
         };
         const headers = {
             ...commonHeaders,
-            ...(config.sessionId
-                ? { Cookie: 'connect.sid=' + config.sessionId }
-                : {
-                      'X-Crystallize-Access-Token-Id': config.accessTokenId || '',
-                      'X-Crystallize-Access-Token-Secret': config.accessTokenSecret || '',
-                  }),
+            ...authenticationHeaders(config),
         };
         const body = JSON.stringify({ query, variables });
 
