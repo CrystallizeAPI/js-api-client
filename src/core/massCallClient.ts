@@ -52,6 +52,14 @@ const createFibonnaciSleeper = () => {
     };
 };
 
+/**
+ * Note: MassCallClient is experimental and may not work as expected.
+ * Creates a mass call client based on an existing ClientInterface.
+ *
+ * @param client ClientInterface
+ * @param options Object
+ * @returns MassClientInterface
+ */
 export function createMassCallClient(
     client: ClientInterface,
     options: {
@@ -76,8 +84,6 @@ export function createMassCallClient(
     const maxConcurrent = options.maxSpawn ?? 5;
     let increment = options.initialSpawn ?? 1;
     const sleeper = createFibonnaciSleeper();
-
-    console.log('⚠️   MassCallClient is experimental and may not work as expected.');
 
     const execute = async () => {
         failedPromises = [];
