@@ -16,6 +16,7 @@ export const addressInputRequest = z
         country: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().optional(),
+        meta: z.array(z.object({ key: z.string(), value: z.string().optional() })).optional(),
     })
     .strict();
 export type AddressInputRequest = z.infer<typeof addressInputRequest>;
