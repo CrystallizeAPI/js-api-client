@@ -20,12 +20,83 @@ import {
 import { catalogueFetcherGraphqlBuilder, createCatalogueFetcher } from './catalogue';
 import { ClientInterface } from './client';
 
+function convertDates(intent: CreateSubscriptionContractInputRequest | UpdateSubscriptionContractInputRequest) {
+    if (!intent.status) {
+        return {
+            ...intent,
+        };
+    }
+
+    let results: any = {
+        ...intent,
+    };
+
+    if (intent.status.renewAt) {
+        results = {
+            ...results,
+            status: {
+                ...results.status,
+                renewAt: intent.status.renewAt.toISOString(),
+            },
+        };
+    }
+
+    if (intent.status.activeUntil) {
+        results = {
+            ...results,
+            status: {
+                ...results.status,
+                activeUntil: intent.status.activeUntil.toISOString(),
+            },
+        };
+    }
+    return results;
+}
+
+function convertEnums(intent: CreateSubscriptionContractInputRequest | UpdateSubscriptionContractInputRequest) {
+    let results: any = {
+        ...intent,
+    };
+
+    if (intent.initial && intent.initial.meteredVariables) {
+        results = {
+            ...results,
+            initial: {
+                ...intent.initial,
+                meteredVariables: intent.initial.meteredVariables.map((variable: any) => {
+                    return {
+                        ...variable,
+                        tierType: typeof variable.tierType === 'string' ? variable.tierType : variable.tierType.value,
+                    };
+                }),
+            },
+        };
+    }
+
+    if (intent.recurring && intent.recurring.meteredVariables) {
+        results = {
+            ...results,
+            recurring: {
+                ...intent.recurring,
+                meteredVariables: intent.recurring.meteredVariables.map((variable: any) => {
+                    return {
+                        ...variable,
+                        tierType: typeof variable.tierType === 'string' ? variable.tierType : variable.tierType.value,
+                    };
+                }),
+            },
+        };
+    }
+
+    return results;
+}
+
 export function createSubscriptionContractManager(apiClient: ClientInterface) {
     const create = async (
         intentSubsctiptionContract: CreateSubscriptionContractInputRequest,
         extraResultQuery?: any,
     ): Promise<any> => {
-        const intent = createSubscriptionContractInputRequest.parse(intentSubsctiptionContract);
+        const intent = createSubscriptionContractInputRequest.parse(convertEnums(intentSubsctiptionContract));
         const api = apiClient.pimApi;
 
         const mutation = {
@@ -33,14 +104,7 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
                 subscriptionContract: {
                     create: {
                         __args: {
-                            input: {
-                                ...intent,
-                                status: {
-                                    ...intent.status,
-                                    renewAt: intent.status.renewAt.toISOString(),
-                                    activeUntil: intent.status.activeUntil.toISOString(),
-                                },
-                            },
+                            input: convertDates(intent),
                         },
                         id: true,
                         createdAt: true,
@@ -58,7 +122,7 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
         intentSubsctiptionContract: UpdateSubscriptionContractInputRequest,
         extraResultQuery?: any,
     ): Promise<any> => {
-        const intent = updateSubscriptionContractInputRequest.parse(intentSubsctiptionContract);
+        const intent = updateSubscriptionContractInputRequest.parse(convertEnums(intentSubsctiptionContract));
         const api = apiClient.pimApi;
 
         const mutation = {
@@ -67,9 +131,7 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
                     update: {
                         __args: {
                             id,
-                            input: {
-                                ...intent,
-                            },
+                            input: convertDates(intent),
                         },
                         id: true,
                         updatedAt: true,

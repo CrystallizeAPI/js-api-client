@@ -7,6 +7,18 @@ import {
 } from '../types/customer';
 import { ClientInterface } from './client';
 
+function convertDates(intent: CreateCustomerInputRequest | UpdateCustomerInputRequest) {
+    if (!intent.birthDate) {
+        return {
+            ...intent,
+        };
+    }
+    return {
+        ...intent,
+        birthDate: intent.birthDate.toISOString(),
+    };
+}
+
 export function createCustomerManager(apiClient: ClientInterface) {
     const create = async (intentCustomer: CreateCustomerInputRequest, extraResultQuery?: any): Promise<any> => {
         const intent = createCustomerInputRequest.parse(intentCustomer);
@@ -18,7 +30,7 @@ export function createCustomerManager(apiClient: ClientInterface) {
                     create: {
                         __args: {
                             input: {
-                                ...intent,
+                                ...convertDates(intent),
                                 tenantId: apiClient.config.tenantId || intent.tenantId || '',
                             },
                         },
@@ -46,7 +58,7 @@ export function createCustomerManager(apiClient: ClientInterface) {
                     update: {
                         __args: {
                             identifier,
-                            input: intent,
+                            input: convertDates(intent),
                             tenantId: apiClient.config.tenantId || '',
                         },
                         identifier: true,

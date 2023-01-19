@@ -155,6 +155,32 @@ export function createOrderFetcher(apiClient: ClientInterface) {
     };
 }
 
+function convertDates(intent: CreateOrderInputRequest | UpdateOrderInputRequest) {
+    if (!intent.cart) {
+        return {
+            ...intent,
+        };
+    }
+    return {
+        ...intent,
+        cart: intent.cart.map((item) => {
+            if (!item.subscription) {
+                return {
+                    ...item,
+                };
+            }
+            return {
+                ...item,
+                subscription: {
+                    ...item.subscription,
+                    start: item.subscription.start?.toISOString(),
+                    end: item.subscription.end?.toISOString(),
+                },
+            };
+        }),
+    };
+}
+
 export function createOrderPusher(apiClient: ClientInterface) {
     return async function pushOrder(intentOrder: CreateOrderInputRequest): Promise<OrderCreatedConfirmation> {
         const intent = createOrderInputRequest.parse(intentOrder);
@@ -166,7 +192,8 @@ export function createOrderPusher(apiClient: ClientInterface) {
                     create: {
                         __args: {
                             input: {
-                                ...intent,
+                                ...convertDates(intent),
+                                createdAt: intent.createdAt?.toISOString() ?? new Date().toISOString(),
                             },
                         },
                         id: true,
@@ -196,9 +223,7 @@ export function createOrderPaymentUpdater(apiClient: ClientInterface) {
                     update: {
                         __args: {
                             id: orderId,
-                            input: {
-                                ...intent,
-                            },
+                            input: convertDates(intent),
                         },
                         id: true,
                         updatedAt: true,
