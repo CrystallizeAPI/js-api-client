@@ -15,6 +15,7 @@ test('Hydrate Skus', async () => {
 test('Hydrate Skus by using the sync API', async () => {
     const CrystallizeClient = createClient({
         tenantIdentifier: 'furniture',
+        tenantId: '5e662ccf734ba3f6151ee528',
         accessTokenId: process.env.CRYSTALLIZE_ACCESS_TOKEN_ID,
         accessTokenSecret: process.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET,
     });

@@ -76,6 +76,7 @@ function bySkus(client: ClientInterface, options?: { useSyncApiForSKUs?: boolean
                         ) {
                         product {
                             getVariants(skus: $skus, language: $language, tenantId: $tenantId) {
+                                sku
                                 product {
                                     tree {
                                         path
@@ -91,7 +92,12 @@ function bySkus(client: ClientInterface, options?: { useSyncApiForSKUs?: boolean
                     },
                 );
 
-                pimAPIResponse.product.getVariants.forEach((product: any) => pathsSet.add(product.tree.path));
+                skus.forEach((sku) => {
+                    const match = pimAPIResponse.product.getVariants.find((v: any) => v.sku === sku);
+                    if (match) {
+                        pathsSet.add(match.product.tree.path);
+                    }
+                });
             } else {
                 const searchAPIResponse = await client.searchApi(
                     `query GET_PRODUCTS_BY_SKU ($skus: [String!], $after: String, $language: String!) {
