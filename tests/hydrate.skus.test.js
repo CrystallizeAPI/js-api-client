@@ -15,6 +15,8 @@ test('Hydrate Skus', async () => {
 test('Hydrate Skus by using the sync API', async () => {
     const CrystallizeClient = createClient({
         tenantIdentifier: 'furniture',
+        accessTokenId: process.env.CRYSTALLIZE_ACCESS_TOKEN_ID,
+        accessTokenSecret: process.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET,
     });
 
     const hydrater = createProductHydrater(CrystallizeClient, { useSyncApiForSKUs: true }).bySkus;
