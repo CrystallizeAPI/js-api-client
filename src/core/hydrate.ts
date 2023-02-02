@@ -7,6 +7,7 @@ export type ProductHydrater = (
     extraQuery?: any,
     perProduct?: (item: string, index: number) => any,
     perVariant?: (item: string, index: number) => any,
+    usePIMApi?: boolean,
 ) => Promise<any>;
 
 function byPaths(client: ClientInterface): ProductHydrater {
@@ -142,8 +143,9 @@ function bySkus(client: ClientInterface): ProductHydrater {
         extraQuery?: any,
         perProduct?: (item: string, index: number) => any,
         perVariant?: (item: string, index: number) => any,
+        usePIMApi?: boolean,
     ): Promise<T> => {
-        const paths = await getPathForSkus(skus, language);
+        const paths = await getPathForSkus(skus, language, usePIMApi);
         if (paths.length === 0) {
             const empty = skus.reduce((acc, sku, index) => {
                 acc[`product${index}`] = {};
