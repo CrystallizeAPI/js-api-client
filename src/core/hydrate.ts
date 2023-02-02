@@ -61,13 +61,39 @@ function byPaths(client: ClientInterface): ProductHydrater {
 }
 
 function bySkus(client: ClientInterface): ProductHydrater {
-    async function getPathForSkus(skus: string[], language: string): Promise<string[]> {
-        const search = client.searchApi;
+    async function getPathForSkus(skus: string[], language: string, usePIMApi?: boolean): Promise<string[]> {
         const pathsSet = new Set<string>();
-        let searchAfterCursor: any;
-        async function getNextSearchPage() {
-            const searchAPIResponse = await search(
-                `query GET_PRODUCTS_BY_SKU ($skus: [String!], $after: String, $language: String!) {
+
+        let afterCursor: any;
+        async function getNextPage() {
+            if (usePIMApi) {
+                const pimAPIResponse = await client.pimApi(
+                    `query GET_PRODUCTS_BY_SKU (
+                        $skus: [String!]
+                        $language: String!
+                        $tenantId: ID!
+                        ) {
+                        product {
+                            getVariants(skus: $skus, language: $language, tenantId: $tenantId) {
+                                product {
+                                    tree {
+                                        path
+                                    }
+                                }
+                            }
+                        }
+                    }`,
+                    {
+                        skus: skus,
+                        language,
+                        tenantId: client.config.tenantId,
+                    },
+                );
+
+                pimAPIResponse.product.getVariants.forEach((product: any) => pathsSet.add(product.tree.path));
+            } else {
+                const searchAPIResponse = await client.searchApi(
+                    `query GET_PRODUCTS_BY_SKU ($skus: [String!], $after: String, $language: String!) {
                     search (
                         after: $after
                         language: $language
@@ -88,24 +114,25 @@ function bySkus(client: ClientInterface): ProductHydrater {
                         }
                     }
                 }`,
-                {
-                    skus: skus,
-                    after: searchAfterCursor,
-                    language,
-                },
-            );
+                    {
+                        skus: skus,
+                        after: afterCursor,
+                        language,
+                    },
+                );
 
-            const { edges, pageInfo } = searchAPIResponse.search || {};
+                const { edges, pageInfo } = searchAPIResponse.search || {};
 
-            edges?.forEach((edge: any) => pathsSet.add(edge.node.path));
+                edges?.forEach((edge: any) => pathsSet.add(edge.node.path));
 
-            if (pageInfo?.hasNextPage) {
-                searchAfterCursor = pageInfo.endCursor;
-                await getNextSearchPage();
+                if (pageInfo?.hasNextPage) {
+                    afterCursor = pageInfo.endCursor;
+                    await getNextPage();
+                }
             }
         }
 
-        await getNextSearchPage();
+        await getNextPage();
 
         return Array.from(pathsSet);
     }
