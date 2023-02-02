@@ -25,6 +25,9 @@ jobs:
               run: yarn install
 
             - name: 🏄 Run the tests
+              env:
+                  CRYSTALLIZE_ACCESS_TOKEN_ID: ${{ secrets.CRYSTALLIZE_ACCESS_TOKEN_ID}}
+                  CRYSTALLIZE_ACCESS_TOKEN_SECRET: ${{ secrets.CRYSTALLIZE_ACCESS_TOKEN_SECRET}}
               run: yarn build && yarn test
 
             - name: 🏷 Create Release
