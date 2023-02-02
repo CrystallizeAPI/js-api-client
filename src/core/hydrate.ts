@@ -61,13 +61,13 @@ function byPaths(client: ClientInterface): ProductHydrater {
     };
 }
 
-function bySkus(client: ClientInterface): ProductHydrater {
-    async function getPathForSkus(skus: string[], language: string, usePIMApi?: boolean): Promise<string[]> {
+function bySkus(client: ClientInterface, options?: { useSyncApiForSKUs?: boolean }): ProductHydrater {
+    async function getPathForSkus(skus: string[], language: string): Promise<string[]> {
         const pathsSet = new Set<string>();
 
         let afterCursor: any;
         async function getNextPage() {
-            if (usePIMApi) {
+            if (options?.useSyncApiForSKUs) {
                 const pimAPIResponse = await client.pimApi(
                     `query GET_PRODUCTS_BY_SKU (
                         $skus: [String!]
@@ -143,9 +143,8 @@ function bySkus(client: ClientInterface): ProductHydrater {
         extraQuery?: any,
         perProduct?: (item: string, index: number) => any,
         perVariant?: (item: string, index: number) => any,
-        usePIMApi?: boolean,
     ): Promise<T> => {
-        const paths = await getPathForSkus(skus, language, usePIMApi);
+        const paths = await getPathForSkus(skus, language);
         if (paths.length === 0) {
             const empty = skus.reduce((acc, sku, index) => {
                 acc[`product${index}`] = {};
@@ -158,12 +157,14 @@ function bySkus(client: ClientInterface): ProductHydrater {
     };
 }
 
-export function createProductHydrater(client: ClientInterface): {
-    byPaths: ProductHydrater;
-    bySkus: ProductHydrater;
-} {
+export function createProductHydrater(
+    client: ClientInterface,
+    options?: {
+        useSyncApiForSKUs?: boolean;
+    },
+) {
     return {
         byPaths: byPaths(client),
-        bySkus: bySkus(client),
+        bySkus: bySkus(client, options),
     };
 }
