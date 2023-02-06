@@ -7,10 +7,25 @@ export type ProductHydrater = (
     extraQuery?: any,
     perProduct?: (item: string, index: number) => any,
     perVariant?: (item: string, index: number) => any,
-    usePIMApi?: boolean,
 ) => Promise<any>;
 
-function byPaths(client: ClientInterface): ProductHydrater {
+export type ProductHydraterOptions = {
+    useSyncApiForSKUs?: boolean;
+    marketIdentifiers?: string[];
+    priceList?: string;
+    priceForEveryone?: boolean;
+};
+
+const priceListBlock = {
+    startDate: true,
+    endDate: true,
+    price: true,
+    identifier: true,
+    modifier: true,
+    modifierType: true,
+};
+
+function byPaths(client: ClientInterface, options?: ProductHydraterOptions): ProductHydrater {
     return <T>(
         paths: string[],
         language: string,
@@ -42,6 +57,25 @@ function byPaths(client: ClientInterface): ProductHydrater {
                             price: true,
                             identifier: true,
                             currency: true,
+                            ...(options?.priceForEveryone === true
+                                ? {
+                                      priceForEveryone: priceListBlock,
+                                  }
+                                : {}),
+                            ...(options?.priceList
+                                ? {
+                                      priceList: {
+                                          __args: { identifier: options.priceList },
+                                      },
+                                  }
+                                : {}),
+                            ...(options?.marketIdentifiers
+                                ? {
+                                      priceFor: {
+                                          __args: { marketIdentifiers: options.marketIdentifiers },
+                                      },
+                                  }
+                                : {}),
                         },
                         ...(perVariant !== undefined ? perVariant(path, index) : {}),
                     },
@@ -61,7 +95,7 @@ function byPaths(client: ClientInterface): ProductHydrater {
     };
 }
 
-function bySkus(client: ClientInterface, options?: { useSyncApiForSKUs?: boolean }): ProductHydrater {
+function bySkus(client: ClientInterface, options?: ProductHydraterOptions): ProductHydrater {
     async function getPathForSkus(skus: string[], language: string): Promise<string[]> {
         const pathsSet = new Set<string>();
 
@@ -159,18 +193,13 @@ function bySkus(client: ClientInterface, options?: { useSyncApiForSKUs?: boolean
 
             return empty as any;
         }
-        return byPaths(client)(paths, language, extraQuery, perProduct, perVariant);
+        return byPaths(client, options)(paths, language, extraQuery, perProduct, perVariant);
     };
 }
 
-export function createProductHydrater(
-    client: ClientInterface,
-    options?: {
-        useSyncApiForSKUs?: boolean;
-    },
-) {
+export function createProductHydrater(client: ClientInterface, options?: ProductHydraterOptions) {
     return {
-        byPaths: byPaths(client),
+        byPaths: byPaths(client, options),
         bySkus: bySkus(client, options),
     };
 }

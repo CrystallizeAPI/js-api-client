@@ -43,11 +43,23 @@ export interface ProductVariant {
     subscriptionPlans?: ProductVariantSubscriptionPlan[];
 }
 
+export interface ProductVariantPriceList {
+    startDate?: Date;
+    endDate?: Date;
+    price?: number;
+    identifier?: string;
+    modifier?: number;
+    modifierType?: 'PERCENTAGE' | 'RELATIVE' | 'ABSOLUTE';
+}
+
 export interface ProductPriceVariant {
     identifier: string;
     name?: string;
     price?: number;
     currency?: string;
+    priceForEveryone?: ProductVariantPriceList;
+    priceFor?: ProductVariantPriceList;
+    priceList?: ProductVariantPriceList;
 }
 
 export interface ProductStockLocation {
