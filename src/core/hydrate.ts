@@ -66,6 +66,7 @@ function byPaths(client: ClientInterface, options?: ProductHydraterOptions): Pro
                                 ? {
                                       priceList: {
                                           __args: { identifier: options.priceList },
+                                          ...priceListBlock,
                                       },
                                   }
                                 : {}),
@@ -73,6 +74,7 @@ function byPaths(client: ClientInterface, options?: ProductHydraterOptions): Pro
                                 ? {
                                       priceFor: {
                                           __args: { marketIdentifiers: options.marketIdentifiers },
+                                          ...priceListBlock,
                                       },
                                   }
                                 : {}),
