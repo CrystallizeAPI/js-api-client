@@ -20,6 +20,7 @@ So far, the available helpers are:
 -   Folders
 -   CustomerManager
 -   Subscription Contract Manager
+-   Signature Verification
 
 ## Installation
 
@@ -472,6 +473,39 @@ An Update method exists as well:
 ```javascript
 await CrystallizeSubscriptionContractManager.update(contractId, cleanUpdateContract);
 ```
+
+## Signature Verification
+
+The full documentation is here https://crystallize.com/learn/developer-guides/api-overview/signature-verification
+This library makes it simple, assuming:
+
+-   you have your `CRYSTALLIZE_SIGNATURE_SECRET` from the environment variable
+-   you retrieve the Signature from the Header in `signatureJwt`
+
+you can use the `createSignatureVerifier`
+
+```javascript
+const guard = createSignatureVerifier({
+    secret: `${process.env.CRYSTALLIZE_SIGNATURE_SECRET}`,
+    sha256: (data: string) => crypto.createHash('sha256').update(data).digest('hex'),
+    jwtVerify: (token: string, secret: string) => jwt.verify(token, secret) as CrystallizeSignature,
+});
+
+guard(signatureJwt, {
+    url: request.url, // full URL here, including https://  etc. request.href in some framework
+    method: 'POST',
+    body: 'THE RAW JSON BODY', // the library parse it for you cf. doc
+});
+```
+
+If the signature is not valid:
+
+-   JWT signature is not verified
+-   HMAC is invalid (man in the middle)
+
+The guard function will trigger an exception.
+
+> We let you provide the `sha256` and `jwtVerify` methods to stay agnostic of any library.
 
 ## Mass Call Client
 

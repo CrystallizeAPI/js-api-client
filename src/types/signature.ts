@@ -7,4 +7,5 @@ export type CrystallizeSignature = {
     userId?: string;
     tenantId: string;
     tenantIdentifier: string;
+    hmac: string;
 };

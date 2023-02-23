@@ -8,6 +8,7 @@ export * from './core/search';
 export * from './core/subscription';
 export * from './core/customer';
 export * from './core/pricing';
+export * from './core/verifySignature';
 export * from './types/product';
 export * from './types/order';
 export * from './types/payment';
