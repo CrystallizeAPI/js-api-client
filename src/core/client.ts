@@ -11,8 +11,18 @@ export type ClientConfiguration = {
 };
 
 type ProfilingOptions = {
-    onRequest: (query: string, variables?: VariablesType) => void;
-    onRequestResolved: (processingTimeMs: number, query: string, variables?: VariablesType) => void;
+    onRequest?: (query: string, variables?: VariablesType) => void;
+    onRequestResolved: (
+        {
+            resolutionTimeMs,
+            serverTimeMs,
+        }: {
+            resolutionTimeMs: number;
+            serverTimeMs: number;
+        },
+        query: string,
+        variables?: VariablesType,
+    ) => void;
 };
 
 export type CreateClientOptions = {
@@ -69,7 +79,9 @@ async function post<T>(
         let start: number = 0;
         if (profiling) {
             start = Date.now();
-            profiling.onRequest(query, variables);
+            if (profiling.onRequest) {
+                profiling.onRequest(query, variables);
+            }
         }
 
         const response = await fetch(path, {
@@ -81,7 +93,16 @@ async function post<T>(
 
         if (profiling) {
             const ms = Date.now() - start;
-            profiling.onRequestResolved(ms, query, variables);
+            const serverTiming = response.headers.get('server-timing') ?? undefined;
+            const duration = serverTiming?.split(';')[1]?.split('=')[1] ?? -1;
+            profiling.onRequestResolved(
+                {
+                    resolutionTimeMs: ms,
+                    serverTimeMs: Number(duration),
+                },
+                query,
+                variables,
+            );
         }
         if (response.ok && 204 === response.status) {
             return <T>{};

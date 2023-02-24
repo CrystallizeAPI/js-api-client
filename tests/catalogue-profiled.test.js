@@ -26,11 +26,12 @@ test('Test with Profiling 1 ', async () => {
                         },
                     };
                 },
-                onRequestResolved: (processingTimeMs, query, variables) => {
+                onRequestResolved: ({ resolutionTimeMs, serverTimeMs }, query, variables) => {
                     profiledQuery = {
                         ...profiledQuery,
                         onRequestResolved: {
-                            processingTimeMs,
+                            resolutionTimeMs,
+                            serverTimeMs,
                             query,
                             variables,
                         },
@@ -67,5 +68,6 @@ test('Test with Profiling 1 ', async () => {
 
     expect(profiledQuery.onRequestResolved.query).toBe(expectedQuery);
     expect(profiledQuery.onRequestResolved.variables).toBe(variables);
-    expect(profiledQuery.onRequestResolved.processingTimeMs).toBeGreaterThan(0);
+    expect(profiledQuery.onRequestResolved.resolutionTimeMs).toBeGreaterThan(0);
+    expect(profiledQuery.onRequestResolved.serverTimeMs).toBeGreaterThan(0);
 });
