@@ -10,6 +10,15 @@ export type ClientConfiguration = {
     origin?: string;
 };
 
+type ProfilingOptions = {
+    onRequest: (query: string, variables?: VariablesType) => void;
+    onRequestResolved: (processingTimeMs: number, query: string, variables?: VariablesType) => void;
+};
+
+export type CreateClientOptions = {
+    profiling?: ProfilingOptions;
+};
+
 export type VariablesType = Record<string, any>;
 export type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise<T>;
 
@@ -45,6 +54,7 @@ async function post<T>(
     query: string,
     variables?: VariablesType,
     init?: RequestInit | any | undefined,
+    profiling?: ProfilingOptions,
 ): Promise<T> {
     try {
         const commonHeaders = {
@@ -56,6 +66,11 @@ async function post<T>(
             ...authenticationHeaders(config),
         };
         const body = JSON.stringify({ query, variables });
+        let start: number = 0;
+        if (profiling) {
+            start = Date.now();
+            profiling.onRequest(query, variables);
+        }
 
         const response = await fetch(path, {
             ...init,
@@ -64,6 +79,10 @@ async function post<T>(
             body,
         });
 
+        if (profiling) {
+            const ms = Date.now() - start;
+            profiling.onRequestResolved(ms, query, variables);
+        }
         if (response.ok && 204 === response.status) {
             return <T>{};
         }
@@ -93,34 +112,26 @@ async function post<T>(
     }
 }
 
-function createApiCaller(uri: string, configuration: ClientConfiguration): ApiCaller<any> {
-    /**
-     * Call a crystallize. Will automatically handle access tokens
-     * @param query The GraphQL query
-     * @param variables Variables to inject into query.
-     */
+function createApiCaller(
+    uri: string,
+    configuration: ClientConfiguration,
+    options?: CreateClientOptions,
+): ApiCaller<any> {
     return function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
-        return post<T>(uri, configuration, query, variables);
+        return post<T>(uri, configuration, query, variables, undefined, options?.profiling);
     };
 }
 
-/**
- * Create one api client for each api endpoint Crystallize offers (catalogue, search, order, subscription, pim).
- *
- * @param configuration
- * @returns ClientInterface
- */
-export function createClient(configuration: ClientConfiguration): ClientInterface {
+export function createClient(configuration: ClientConfiguration, options?: CreateClientOptions): ClientInterface {
     const identifier = configuration.tenantIdentifier;
     const origin = configuration.origin || '.crystallize.com';
     const apiHost = (path: string[], prefix: 'api' | 'pim' = 'api') => `https://${prefix}${origin}/${path.join('/')}`;
-
     return {
-        catalogueApi: createApiCaller(apiHost([identifier, 'catalogue']), configuration),
-        searchApi: createApiCaller(apiHost([identifier, 'search']), configuration),
-        orderApi: createApiCaller(apiHost([identifier, 'orders']), configuration),
-        subscriptionApi: createApiCaller(apiHost([identifier, 'subscriptions']), configuration),
-        pimApi: createApiCaller(apiHost(['graphql'], 'pim'), configuration),
+        catalogueApi: createApiCaller(apiHost([identifier, 'catalogue']), configuration, options),
+        searchApi: createApiCaller(apiHost([identifier, 'search']), configuration, options),
+        orderApi: createApiCaller(apiHost([identifier, 'orders']), configuration, options),
+        subscriptionApi: createApiCaller(apiHost([identifier, 'subscriptions']), configuration, options),
+        pimApi: createApiCaller(apiHost(['graphql'], 'pim'), configuration, options),
         config: {
             tenantId: configuration.tenantId,
             tenantIdentifier: configuration.tenantIdentifier,

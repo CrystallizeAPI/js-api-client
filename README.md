@@ -21,6 +21,7 @@ So far, the available helpers are:
 -   CustomerManager
 -   Subscription Contract Manager
 -   Signature Verification
+-   Profiling the requests
 
 ## Installation
 
@@ -506,6 +507,33 @@ If the signature is not valid:
 The guard function will trigger an exception.
 
 > We let you provide the `sha256` and `jwtVerify` methods to stay agnostic of any library.
+
+## Profiling the request
+
+There is time when you want to log and see the raw queries sent to Crystallize and also the timings.
+
+```javascript
+const apiClient = createClient(
+    {
+        tenantIdentifier: 'furniture',
+    },
+    {
+        profiling: {
+            onRequest: (query, variables) => {
+                // do something with it
+                console.log(query, variables);
+            },
+            onRequestResolved: (processingTimeMs, query, variables) => {
+                // do something with it
+                console.log(processingTimeMs, query, variables);
+            },
+        },
+    },
+);
+```
+
+The queries that you get passed on those functions are strings. Computed query from JS Object used by Fetcher, Hydrater and so on.
+It's really handy for debugging and development.
 
 ## Mass Call Client
 
