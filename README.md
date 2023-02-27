@@ -523,7 +523,7 @@ const apiClient = createClient(
                 // do something with it
                 console.log(query, variables);
             },
-            onRequestResolved: (processingTimeMs, query, variables) => {
+            onRequestResolved: ({ resolutionTimeMs, serverTimeMs }, query, variables) => {
                 // do something with it
                 console.log(processingTimeMs, query, variables);
             },
