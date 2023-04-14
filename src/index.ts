@@ -1,4 +1,5 @@
 export * from './core/client';
+export * from './core/massCallClient';
 export * from './core/navigation';
 export * from './core/hydrate';
 export * from './core/catalogue';
