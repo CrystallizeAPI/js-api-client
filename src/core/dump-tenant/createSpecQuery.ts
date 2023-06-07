@@ -182,6 +182,10 @@ export const getTenantQueries = (tenantId: string) => {
           acceptedShapeIdentifiers
           min
           max
+          minSkus
+          minItems
+          maxSkus
+          maxItems
         }
       }`,
         GET_ITEM: `query GET_ITEM ($language: String!, $path: String!) {
@@ -378,6 +382,10 @@ fragment richTextContent on RichTextContent {
 fragment itemRelationsContent on ItemRelationsContent {
   items {
     cataloguePath: path
+    externalReference
+  }
+  productVariants {
+    sku
     externalReference
   }
 }
