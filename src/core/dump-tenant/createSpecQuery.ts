@@ -180,8 +180,6 @@ export const getTenantQueries = (tenantId: string) => {
         }
         ... on ItemRelationsComponentConfig {
           acceptedShapeIdentifiers
-          min
-          max
           minSkus
           minItems
           maxSkus
