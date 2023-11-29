@@ -62,16 +62,21 @@ export async function uploadImageToTenant({
     return response.status === 201 ? (formData.get('key') as string) : false;
 }
 
-export async function handleImageUpload(imagePath: string, apiClient: ClientInterface, tenantId: string): Promise<any> {
-    if (!imagePath) return;
+export async function handleImageUpload(
+    imagePath: string,
+    apiClient: ClientInterface,
+    tenantId: string,
+): Promise<string | boolean> {
+    if (!imagePath) {
+        return 'No image path provided';
+    }
 
     const extension = imagePath.split('.').pop() as string;
     const mimeType = mime.getType(extension);
     const filename = imagePath.split('T/').pop() as string;
 
     if (!mimeType) {
-        console.log('Could not find mime type for file. Halting upload');
-        return null;
+        return 'Could not find mime type for file. Halting upload';
     }
 
     const stats = fs.statSync(imagePath);
