@@ -62,7 +62,7 @@ export async function uploadImageToTenant({
     return response.status === 201 ? (formData.get('key') as string) : false;
 }
 
-export async function handleImageUpload(imagePath: any, apiClient: ClientInterface, tenantId: string): Promise<any> {
+export async function handleImageUpload(imagePath: string, apiClient: ClientInterface, tenantId: string): Promise<any> {
     if (!imagePath) return;
 
     const extension = imagePath.split('.').pop() as string;
