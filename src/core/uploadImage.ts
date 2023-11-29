@@ -79,6 +79,10 @@ export async function handleImageUpload(
         return 'Could not find mime type for file. Halting upload';
     }
 
+    if (!mimeType.includes('image')) {
+        return 'File is not an image. Halting upload';
+    }
+
     const stats = fs.statSync(imagePath);
     const buffer = fs.readFileSync(imagePath);
 
