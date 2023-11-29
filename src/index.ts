@@ -19,6 +19,7 @@ export * from './types/address';
 export * from './types/customer';
 export * from './types/signature';
 export * from './types/pricing';
+export * from './core/uploadImage';
 
 import { createClient } from './core/client';
 import { createNavigationFetcher } from './core/navigation';
