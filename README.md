@@ -573,4 +573,20 @@ run();
 
 A full example is here: https://github.com/CrystallizeAPI/libraries/blob/main/components/js-api-client/src/examples/dump-tenant.ts
 
+## Image uploader
+
+Uploading an image to Crystallize is a three step process:
+
+-   You first need to send a request to the PIM API to get a pre-signed URL to upload the file
+-   Then, you send another request to upload the file and receive a key
+-   Lastly, you can register the image in Crystallize using the key received in the previous step
+
+To simplify this process, there is a _handleImageUpload_ function provided with the library. Here is how you would use it:
+
+```javascript
+const image = await handleImageUpload(path, crystallizeClient, 'tenantID');
+```
+
+This takes care of the first two steps, which means you receive a key you can then use to register your image in Crystallize.
+
 [crystallizeobject]: crystallize_marketing|folder|625619f6615e162541535959
