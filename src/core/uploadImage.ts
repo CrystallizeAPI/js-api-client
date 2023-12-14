@@ -65,7 +65,7 @@ export async function uploadImageToTenant({
 export async function handleImageUpload(
     imagePath: string,
     apiClient: ClientInterface,
-    tenantId: string,
+    tenantId?: string,
 ): Promise<string | boolean> {
     if (!imagePath) {
         return 'No image path provided';
@@ -94,8 +94,13 @@ export async function handleImageUpload(
         apiClient,
     };
 
+    const tId = apiClient.config.tenantId ?? tenantId;
+    if (!tId) {
+        return 'No tenant id provided';
+    }
+
     const imageKey = await uploadImageToTenant({
-        id: tenantId,
+        id: tId,
         ...data,
     });
 
