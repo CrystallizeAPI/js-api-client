@@ -1,10 +1,11 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "1.13.0",
+    "version": "1.13.1",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
-        "Sébastien Morel <sebastien@crystallize.com>"
+        "Sébastien Morel <sebastien@crystallize.com>",
+        "Dhairya Dwivedi <dhairya@crystallize.com>"
     ],
     "scripts": {
         "watch": "yarn tsc -W",

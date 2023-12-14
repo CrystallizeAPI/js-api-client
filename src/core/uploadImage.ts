@@ -32,7 +32,7 @@ mutation UPLOAD_FILE ($tenantId: ID!, $filename: String!, $mimeType: String!) {
     }
 }`;
 
-export async function uploadImageToTenant({
+export async function uploadToTenant({
     id,
     mimeType,
     filename,
@@ -55,7 +55,6 @@ export async function uploadImageToTenant({
 
     const response = await fetch(payload.url, {
         method: 'POST',
-        headers: new Headers({ 'Content-Length': String(stats.size) }),
         body: formData,
     });
 
@@ -99,7 +98,7 @@ export async function handleImageUpload(
         return 'No tenant id provided';
     }
 
-    const imageKey = await uploadImageToTenant({
+    const imageKey = await uploadToTenant({
         id: tId,
         ...data,
     });
