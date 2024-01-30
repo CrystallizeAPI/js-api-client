@@ -7,6 +7,7 @@ export type ClientConfiguration = {
     accessTokenSecret?: string;
     staticAuthToken?: string;
     sessionId?: string;
+    shopApiToken?: string;
     origin?: string;
 };
 
@@ -27,6 +28,11 @@ type ProfilingOptions = {
 
 export type CreateClientOptions = {
     profiling?: ProfilingOptions;
+    shopApiToken?: {
+        doNotFetch?: boolean;
+        scopes?: string[];
+        expiresIn?: number;
+    };
 };
 
 export type VariablesType = Record<string, any>;
@@ -38,10 +44,12 @@ export type ClientInterface = {
     orderApi: ApiCaller<any>;
     subscriptionApi: ApiCaller<any>;
     pimApi: ApiCaller<any>;
+    nextPimApi: ApiCaller<any>;
+    shopCartApi: ApiCaller<any>;
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
 };
 
-function authenticationHeaders(config: ClientConfiguration) {
+function authenticationHeaders(config: ClientConfiguration): Record<string, string> {
     if (config.sessionId) {
         return {
             Cookie: 'connect.sid=' + config.sessionId,
@@ -67,14 +75,15 @@ async function post<T>(
     profiling?: ProfilingOptions,
 ): Promise<T> {
     try {
-        const commonHeaders = {
+        const { headers: initHeaders, ...initRest } = init || {};
+
+        const headers = {
             'Content-type': 'application/json; charset=UTF-8',
             Accept: 'application/json',
-        };
-        const headers = {
-            ...commonHeaders,
             ...authenticationHeaders(config),
+            ...initHeaders,
         };
+
         const body = JSON.stringify({ query, variables });
         let start: number = 0;
         if (profiling) {
@@ -85,7 +94,7 @@ async function post<T>(
         }
 
         const response = await fetch(path, {
-            ...init,
+            ...initRest,
             method: 'POST',
             headers,
             body,
@@ -133,6 +142,12 @@ async function post<T>(
     }
 }
 
+function apiHost(configuration: ClientConfiguration) {
+    const origin = configuration.origin || '.crystallize.com';
+    return (path: string[], prefix: 'api' | 'pim' | 'shop-api' = 'api') =>
+        `https://${prefix}${origin}/${path.join('/')}`;
+}
+
 function createApiCaller(
     uri: string,
     configuration: ClientConfiguration,
@@ -143,16 +158,58 @@ function createApiCaller(
     };
 }
 
+function shopApiCaller(configuration: ClientConfiguration, options?: CreateClientOptions) {
+    const identifier = configuration.tenantIdentifier;
+    let shopApiToken = configuration.shopApiToken;
+    return async function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
+        if (!shopApiToken && options?.shopApiToken?.doNotFetch !== true) {
+            const headers = {
+                'Content-type': 'application/json; charset=UTF-8',
+                Accept: 'application/json',
+                ...authenticationHeaders(configuration),
+            };
+            const response = await fetch(apiHost(configuration)([`@${identifier}`, 'auth', 'token'], 'shop-api'), {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    scopes: options?.shopApiToken?.scopes || ['cart'],
+                    expiresIn: options?.shopApiToken?.expiresIn || 3600 * 12,
+                }),
+            });
+            const results = await response.json();
+            if (results.success !== true) {
+                throw new Error('Could not fetch shop api token: ' + results.error);
+            }
+            shopApiToken = results.token;
+        }
+        return post<T>(
+            apiHost(configuration)([`@${identifier}`, 'cart'], 'shop-api'),
+            {
+                ...configuration,
+                shopApiToken: shopApiToken,
+            },
+            query,
+            variables,
+            {
+                headers: {
+                    Authorization: `Bearer ${shopApiToken}`,
+                },
+            },
+            options?.profiling,
+        );
+    };
+}
+
 export function createClient(configuration: ClientConfiguration, options?: CreateClientOptions): ClientInterface {
     const identifier = configuration.tenantIdentifier;
-    const origin = configuration.origin || '.crystallize.com';
-    const apiHost = (path: string[], prefix: 'api' | 'pim' = 'api') => `https://${prefix}${origin}/${path.join('/')}`;
     return {
-        catalogueApi: createApiCaller(apiHost([identifier, 'catalogue']), configuration, options),
-        searchApi: createApiCaller(apiHost([identifier, 'search']), configuration, options),
-        orderApi: createApiCaller(apiHost([identifier, 'orders']), configuration, options),
-        subscriptionApi: createApiCaller(apiHost([identifier, 'subscriptions']), configuration, options),
-        pimApi: createApiCaller(apiHost(['graphql'], 'pim'), configuration, options),
+        catalogueApi: createApiCaller(apiHost(configuration)([identifier, 'catalogue']), configuration, options),
+        searchApi: createApiCaller(apiHost(configuration)([identifier, 'search']), configuration, options),
+        orderApi: createApiCaller(apiHost(configuration)([identifier, 'orders']), configuration, options),
+        subscriptionApi: createApiCaller(apiHost(configuration)([identifier, 'subscriptions']), configuration, options),
+        pimApi: createApiCaller(apiHost(configuration)(['graphql'], 'pim'), configuration, options),
+        nextPimApi: createApiCaller(apiHost(configuration)([`@${identifier}`]), configuration, options),
+        shopCartApi: shopApiCaller(configuration, options),
         config: {
             tenantId: configuration.tenantId,
             tenantIdentifier: configuration.tenantIdentifier,

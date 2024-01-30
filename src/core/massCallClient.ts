@@ -189,6 +189,8 @@ export function createMassCallClient(
         orderApi: client.orderApi,
         subscriptionApi: client.subscriptionApi,
         pimApi: client.pimApi,
+        shopCartApi: client.shopCartApi,
+        nextPimApi: client.nextPimApi,
         config: client.config,
         enqueue: {
             catalogueApi: (query: string, variables?: VariablesType): string => {
