@@ -48,6 +48,8 @@ You get access to different helpers for each API:
 -   orderApi
 -   subscriptionApi
 -   pimApi
+-   pimNextApi
+-   shopCartApi
 
 First, you need to create the _Client_:
 
@@ -63,13 +65,63 @@ Then you can use it:
 
 ```typescript
 export async function fetchSomething(): Promise<Something[]> {
-    const caller = CrystallizeClient.catalogueApi;
-    const response = await caller(graphQLQuery, variables);
+    const response = await CrystallizeClient.catalogueApi(graphQLQuery, variables);
     return response.catalogue;
 }
 ```
 
 There is a live demo: https://crystallizeapi.github.io/libraries/js-api-client/call-api
+
+When it comes to API that requires Authentication you can provide more to _createClient_.
+
+```javascript
+const pimApiClient = createClient({
+    tenantIdentifier: 'furniture',
+    accessTokenId: 'xxx',
+    accessTokenSecret: 'xxx',
+};
+await pimApiClient.pimApi(query)
+
+const catalogueApiClient = createClient({
+    tenantIdentifier: 'furniture',
+    staticAuthToken: 'xxx'
+};
+await catalogueApiClient.catalogueApi(query)
+```
+
+There is even more about the Shop Cart API that requires a specific token.
+If you fetched the Token yourself you can pass it directly and enjoy the Shop Cart API
+
+```javascript
+const cartApiClient = createClient({
+    tenantIdentifier: 'furniture',
+    shopApiToken: 'xxx',
+});
+await cartApiClient.shopCartApi(query);
+```
+
+But you can let the JS API Client do the heavy-lifting for you. Shop Cart API requires proof of access to PIM in order to get such Token.
+Based on your situation, most likely you are using Shop Cart API server-side:
+
+```javascript
+const cartApiClient = createClient(
+    {
+        tenantIdentifier: 'furniture',
+        accessTokenId: 'xxx',
+        accessTokenSecret: 'xxx',
+    },
+    {
+        // optional
+        shopApiToken: {
+            expiresIn: 900000, // optional, default 12 hours
+            scopes: ['cart', 'cart:admin', 'usage'], // optional, default ['cart']
+        },
+    },
+);
+await cartApiClient.shopCartApi(query);
+```
+
+JS API Client will grab the Token for you (once) and use it within the following calls to Shop Cart API.
 
 ## Catalogue Fetcher
 

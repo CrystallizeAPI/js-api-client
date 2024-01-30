@@ -100,3 +100,36 @@ test('callSearchApi: Raw fetch Skus', async () => {
 
     expect(response.search.edges[0].node.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');
 });
+
+test.skip('Shop API Cart: Test we can call it', async () => {
+    const CrystallizeClient = createClient(
+        {
+            tenantIdentifier: 'frntr',
+            accessTokenId: 'xxx',
+            accessTokenSecret: 'xxx',
+            // shopApiToken: 'xxx'
+        },
+        {
+            shopApiToken: {
+                // doNotFetch: false,
+                // expiresIn: 900000,
+                // scopes: ['cart', 'cart:admin', 'usage']
+            },
+        },
+    );
+    const caller = CrystallizeClient.shopCartApi;
+    const query = `mutation HYDRATE ($sku: String!) {
+    hydrate(input: { items: [ { sku: $sku } ] }) {
+        id
+        total {
+            gross
+        }
+        items {
+            name
+        }
+    }}`;
+    const response = await caller(query, {
+        sku: 'smeg-robot-pink-standard',
+    });
+    expect(response.hydrate.id).toBeDefined();
+});

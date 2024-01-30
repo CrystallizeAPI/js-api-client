@@ -1,7 +1,7 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "1.13.1",
+    "version": "2.0.0",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
         "Sébastien Morel <sebastien@crystallize.com>",
@@ -9,7 +9,7 @@
     ],
     "scripts": {
         "watch": "yarn tsc -W",
-        "build": "yarn tsc",
+        "build": "tsup src/index.ts --format esm,cjs --dts",
         "test": "jest",
         "test:watch": "jest --watch",
         "bump": "yarn tsc && yarn version --no-git-tag-version --new-version"
@@ -18,16 +18,18 @@
         "type": "git",
         "url": "https://github.com/CrystallizeAPI/js-api-client.git"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
     "devDependencies": {
         "@tsconfig/node16": "^16.1.1",
         "@types/node": "^20.10.4",
+        "tsup": "^8.0.1",
         "@types/node-fetch": "^2",
         "jest": "^29.7.0"
     },
     "dependencies": {
-        "dotenv": "^16.3.1",
+        "dotenv": "^16.4.1",
         "json-to-graphql-query": "^2.2.5",
         "mime-lite": "^1.0.3",
         "node-fetch": "^2",
