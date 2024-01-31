@@ -99,8 +99,7 @@ const cartApiClient = createClient({
 await cartApiClient.shopCartApi(query);
 ```
 
-Or, you can let the JS API Client do the heavy-lifting for you. The Shop Cart API requires proof of access to the PIM API in order to get such a token.
-Based on your situation, you're most likely using the Shop Cart API server-side:
+Or, you can let the JS API Client do the heavy-lifting for you. The Shop Cart API requires proof of access to the PIM API in order to get such a token. Based on your situation, you're most likely using the Shop Cart API server-side:
 
 ```javascript
 const cartApiClient = createClient(
