@@ -89,8 +89,7 @@ const catalogueApiClient = createClient({
 await catalogueApiClient.catalogueApi(query)
 ```
 
-There is even more about the [Shop Cart API](https://crystallize.com/learn/developer-guides/shop-api) that requires a specific token.
-If you've already fetched the token yourself, you can pass it directly:
+There is even more about the [Shop Cart API](https://crystallize.com/learn/developer-guides/shop-api) that requires a specific token. If you've already fetched the token yourself, you can pass it directly:
 
 ```javascript
 const cartApiClient = createClient({
