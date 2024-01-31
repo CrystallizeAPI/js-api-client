@@ -51,7 +51,7 @@ You get access to different helpers for each API:
 -   pimNextApi
 -   shopCartApi
 
-First, you need to create the _Client_:
+First, you need to create the _Client:_
 
 ```javascript
 import { createClient } from '@crystallize/js-api-client';
@@ -72,7 +72,7 @@ export async function fetchSomething(): Promise<Something[]> {
 
 There is a live demo: https://crystallizeapi.github.io/libraries/js-api-client/call-api
 
-When it comes to API that requires Authentication you can provide more to _createClient_.
+When it comes to APIs that require [authentication](https://crystallize.com/learn/developer-guides/api-overview/authentication), you can provide more to _createClient_.
 
 ```javascript
 const pimApiClient = createClient({
@@ -89,8 +89,8 @@ const catalogueApiClient = createClient({
 await catalogueApiClient.catalogueApi(query)
 ```
 
-There is even more about the Shop Cart API that requires a specific token.
-If you fetched the Token yourself you can pass it directly and enjoy the Shop Cart API
+There is even more about the [Shop Cart API](https://crystallize.com/learn/developer-guides/shop-api) that requires a specific token.
+If you've already fetched the token yourself, you can pass it directly:
 
 ```javascript
 const cartApiClient = createClient({
@@ -100,8 +100,8 @@ const cartApiClient = createClient({
 await cartApiClient.shopCartApi(query);
 ```
 
-But you can let the JS API Client do the heavy-lifting for you. Shop Cart API requires proof of access to PIM in order to get such Token.
-Based on your situation, most likely you are using Shop Cart API server-side:
+Or, you can let the JS API Client do the heavy-lifting for you. The Shop Cart API requires proof of access to the PIM API in order to get such a token.
+Based on your situation, you're most likely using the Shop Cart API server-side:
 
 ```javascript
 const cartApiClient = createClient(
@@ -121,7 +121,7 @@ const cartApiClient = createClient(
 await cartApiClient.shopCartApi(query);
 ```
 
-JS API Client will grab the Token for you (once) and use it within the following calls to Shop Cart API.
+The JS API Client will grab the token for you (once) and use it within subsequent calls to the Shop Cart API.
 
 ## Catalogue Fetcher
 
