@@ -14,7 +14,9 @@ test('Test Nav fetching Node: Shop', async () => {
     expect(response.tree.children[0].children[0].path).toBe('/shop/decoration/shelves-in-wood-hey');
 
     expect(response.tree.children[1].path).toBe('/shop/bathroom-fitting');
-    expect(response.tree.children[1].children[2].path).toBe('/shop/bathroom-fitting/mounted-bathroom-vanity-in-gray');
+    expect(response.tree.children[1].children[2].path).toBe(
+        '/shop/bathroom-fitting/mounted-bathroom-vanity-in-treated-wood',
+    );
 
     // Verify all tree nodes have id properties
     walkTree([response.tree], (node) => {
