@@ -558,6 +558,20 @@ The guard function will trigger an exception.
 
 > We let you provide the `sha256` and `jwtVerify` methods to stay agnostic of any library.
 
+### Handling Signature with HTTP GET and Webhook
+
+When using Webhook you may select GET as a HTTP Method. Even if you don't provide any GraphQL query Crystallize is going to call your endpoint with new parameters, in this case you need to provide an extra parameter to the `guard` function.
+
+```javascript
+guard(signatureJwt, {
+    url: request.url, // full URL here, including https://  etc. request.href in some framework
+    webhookUrl: 'https://webhook.site/xxx', // the URL you have setup in the Webhook
+    method: 'GET',
+}),
+```
+
+Using that will instruct the JS API Client to extract URL Parameter and use it as a payload to verify the HMAC.
+
 ## Profiling the request
 
 There is time when you want to log and see the raw queries sent to Crystallize and also the timings.
