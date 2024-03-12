@@ -48,7 +48,7 @@ export const createSignatureVerifier = ({ sha256, jwtVerify, secret }: CreateSig
                 // we are going to do another check here for the webhook payload situation
                 if (request.url && request.webhookUrl && request.method && request.method.toLowerCase() === 'get') {
                     const body = newQueryParams(request.webhookUrl, request.url);
-                    if (Object.keys(body).length > 1) {
+                    if (Object.keys(body).length > 0) {
                         const newChallenge = {
                             url: request.webhookUrl,
                             method: request.method,
