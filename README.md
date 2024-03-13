@@ -533,7 +533,7 @@ This library makes it simple, assuming:
 -   you have your `CRYSTALLIZE_SIGNATURE_SECRET` from the environment variable
 -   you retrieve the Signature from the Header in `signatureJwt`
 
-you can use the `createSignatureVerifier`
+you can use the `createSignatureVerifier` OR `createAsyncSignatureVerifier` based on your preferences/libs you are using to verify and/or hash
 
 ```javascript
 const guard = createSignatureVerifier({
