@@ -1,7 +1,7 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "2.3.1",
+    "version": "2.3.2",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
         "Sébastien Morel <sebastien@crystallize.com>",

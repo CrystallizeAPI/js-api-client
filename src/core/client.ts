@@ -163,7 +163,7 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
     let shopApiToken = configuration.shopApiToken;
     return async function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
         if (!shopApiToken && options?.shopApiToken?.doNotFetch !== true) {
-            //static auth token is not enough for shop api token retrieval
+            //static auth token must be removed to fetch the shop api token
             const { staticAuthToken, ...withoutStaticAuthToken } = configuration;
             const headers = {
                 'Content-type': 'application/json; charset=UTF-8',
@@ -204,13 +204,49 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
 
 export function createClient(configuration: ClientConfiguration, options?: CreateClientOptions): ClientInterface {
     const identifier = configuration.tenantIdentifier;
+
+    // let's rewrite the configuration based on the need of the endpoint
+    // authenticationHeaders manages this priority: sessionId > staticAuthToken > accessTokenId/accessTokenSecret
+    const commonConfig: ClientConfiguration = {
+        tenantIdentifier: configuration.tenantIdentifier,
+        tenantId: configuration.tenantId,
+        origin: configuration.origin,
+    };
+
+    // static auth token is excluded
+    const pimConfig: ClientConfiguration = {
+        ...commonConfig,
+        sessionId: configuration.sessionId,
+        accessTokenId: configuration.accessTokenId,
+        accessTokenSecret: configuration.accessTokenSecret,
+    };
+
+    // sessionId is excluded
+    const catalogConfig: ClientConfiguration = {
+        ...commonConfig,
+        staticAuthToken: configuration.staticAuthToken,
+        accessTokenId: configuration.accessTokenId,
+        accessTokenSecret: configuration.accessTokenSecret,
+    };
+
+    // sessionId and static auth token are excluded
+    const tokenOnlyConfig: ClientConfiguration = {
+        ...commonConfig,
+        accessTokenId: configuration.accessTokenId,
+        accessTokenSecret: configuration.accessTokenSecret,
+    };
+
     return {
-        catalogueApi: createApiCaller(apiHost(configuration)([identifier, 'catalogue']), configuration, options),
-        searchApi: createApiCaller(apiHost(configuration)([identifier, 'search']), configuration, options),
-        orderApi: createApiCaller(apiHost(configuration)([identifier, 'orders']), configuration, options),
-        subscriptionApi: createApiCaller(apiHost(configuration)([identifier, 'subscriptions']), configuration, options),
-        pimApi: createApiCaller(apiHost(configuration)(['graphql'], 'pim'), configuration, options),
-        nextPimApi: createApiCaller(apiHost(configuration)([`@${identifier}`]), configuration, options),
+        catalogueApi: createApiCaller(apiHost(configuration)([identifier, 'catalogue']), catalogConfig, options),
+        searchApi: createApiCaller(apiHost(configuration)([identifier, 'search']), catalogConfig, options),
+        orderApi: createApiCaller(apiHost(configuration)([identifier, 'orders']), tokenOnlyConfig, options),
+        subscriptionApi: createApiCaller(
+            apiHost(configuration)([identifier, 'subscriptions']),
+            tokenOnlyConfig,
+            options,
+        ),
+        pimApi: createApiCaller(apiHost(configuration)(['graphql'], 'pim'), pimConfig, options),
+        nextPimApi: createApiCaller(apiHost(configuration)([`@${identifier}`]), pimConfig, options),
         shopCartApi: shopApiCaller(configuration, options),
         config: {
             tenantId: configuration.tenantId,
