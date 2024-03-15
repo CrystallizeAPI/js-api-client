@@ -163,10 +163,12 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
     let shopApiToken = configuration.shopApiToken;
     return async function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
         if (!shopApiToken && options?.shopApiToken?.doNotFetch !== true) {
+            //static auth token is not enough for shop api token retrieval
+            const { staticAuthToken, ...withoutStaticAuthToken } = configuration;
             const headers = {
                 'Content-type': 'application/json; charset=UTF-8',
                 Accept: 'application/json',
-                ...authenticationHeaders(configuration),
+                ...authenticationHeaders(withoutStaticAuthToken),
             };
             const response = await fetch(apiHost(configuration)([`@${identifier}`, 'auth', 'token'], 'shop-api'), {
                 method: 'POST',
