@@ -158,11 +158,19 @@ function createApiCaller(
     };
 }
 
+const getExpirationAtFromToken = (token: string) => {
+    const payload = token.split('.')[1];
+    const decodedPayload = Buffer.from(payload, 'base64').toString('utf-8');
+    const parsedPayload = JSON.parse(decodedPayload);
+    return parsedPayload.exp * 1000;
+};
 function shopApiCaller(configuration: ClientConfiguration, options?: CreateClientOptions) {
     const identifier = configuration.tenantIdentifier;
     let shopApiToken = configuration.shopApiToken;
     return async function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
-        if (!shopApiToken && options?.shopApiToken?.doNotFetch !== true) {
+        const tokenExpiresAt: number | null = shopApiToken ? getExpirationAtFromToken(shopApiToken) : null;
+        const isTokenAboutToExpireOrIsExpired = tokenExpiresAt ? tokenExpiresAt - Date.now() < 1000 * 60 * 5 : true;
+        if ((!shopApiToken || isTokenAboutToExpireOrIsExpired) && options?.shopApiToken?.doNotFetch !== true) {
             //static auth token must be removed to fetch the shop api token
             const { staticAuthToken, ...withoutStaticAuthToken } = configuration;
             const headers = {
