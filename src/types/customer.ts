@@ -51,5 +51,6 @@ export const updateCustomerInputRequest = createCustomerInputRequest.omit({ iden
 export type UpdateCustomerInputRequest = z.infer<typeof updateCustomerInputRequest>;
 
 export type Customer = Omit<CreateCustomerInputRequest, 'addresses'> & {
-    addresses: Address[];
+    //setting addresses as optional to allow partial updates
+    addresses?: Address[];
 };
