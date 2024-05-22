@@ -5,6 +5,7 @@ export * from './core/hydrate';
 export * from './core/catalogue';
 export * from './core/order';
 export * from './core/search';
+export * from './core/shape';
 export * from './core/subscription';
 export * from './core/customer';
 export * from './core/pricing';
