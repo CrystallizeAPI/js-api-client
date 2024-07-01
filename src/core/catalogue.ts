@@ -1,4 +1,4 @@
-import { ClientInterface, VariablesType } from './client';
+import { ClientInterface, VariablesType } from './client.js';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 import {
     CatalogueFetcherGrapqhqlOnComponent,
@@ -9,7 +9,7 @@ import {
     CatalogueFetcherGrapqhqlOnSubscriptionPlan,
     componentType,
     ComponentType,
-} from '../types/catalogue';
+} from '../types/catalogue.js';
 
 export function createCatalogueFetcher(client: ClientInterface) {
     return <T>(query: any, variables?: VariablesType): Promise<T> => {

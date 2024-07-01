@@ -1,4 +1,4 @@
-import { CrystallizeSignature } from '../types/signature';
+import { CrystallizeSignature } from '../types/signature.js';
 
 export type SimplifiedRequest = {
     url?: string;

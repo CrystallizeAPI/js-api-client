@@ -4,8 +4,8 @@ import {
     CatalogueSearchOrderBy,
     catalogueSearchFilter,
     catalogueSearchOrderBy,
-} from '../types/search';
-import { ClientInterface } from './client';
+} from '../types/search.js';
+import { ClientInterface } from './client.js';
 
 export function createSearcher(client: ClientInterface) {
     async function* search(

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as mime from 'mime-lite';
-import { ClientInterface } from './client';
+import { ClientInterface } from './client.js';
 
 type ImageInputWithReferenceId = {
     id: string;

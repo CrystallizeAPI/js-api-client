@@ -1,5 +1,5 @@
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
-import { ClientInterface } from './client';
+import { ClientInterface } from './client.js';
 
 export type ProductHydrater = (
     items: string[],

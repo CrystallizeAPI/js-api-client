@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Address, addressInputRequest } from './address';
+import { Address, addressInputRequest } from './address.js';
 
 export const orderCustomerInputRequest = z
     .object({

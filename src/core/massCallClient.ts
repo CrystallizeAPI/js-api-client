@@ -1,4 +1,4 @@
-import { ApiCaller, ClientInterface, VariablesType } from './client';
+import { ApiCaller, ClientInterface, VariablesType } from './client.js';
 
 export type CrystallizePromise<T> = {
     key: string;

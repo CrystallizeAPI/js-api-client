@@ -7,7 +7,7 @@ import {
     ProductVariantSubscriptionMeteredVariable,
     ProductVariantSubscriptionPlanTier,
     ProductVariantSubscriptionPlanPricing,
-} from '../types/product';
+} from '../types/product.js';
 import {
     createSubscriptionContractInputRequest,
     CreateSubscriptionContractInputRequest,
@@ -16,9 +16,9 @@ import {
     SubscriptionContractPhaseInput,
     updateSubscriptionContractInputRequest,
     UpdateSubscriptionContractInputRequest,
-} from '../types/subscription';
-import { catalogueFetcherGraphqlBuilder, createCatalogueFetcher } from './catalogue';
-import { ClientInterface } from './client';
+} from '../types/subscription.js';
+import { catalogueFetcherGraphqlBuilder, createCatalogueFetcher } from './catalogue.js';
+import { ClientInterface } from './client.js';
 
 function convertDates(intent: CreateSubscriptionContractInputRequest | UpdateSubscriptionContractInputRequest) {
     if (!intent.status) {

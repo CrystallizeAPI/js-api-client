@@ -1,6 +1,6 @@
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
-import { ClientInterface } from './client';
-import { Customer } from '../types/customer';
+import { ClientInterface } from './client.js';
+import { Customer } from '../types/customer.js';
 
 type Deps = {
     apiClient: ClientInterface;

@@ -1,5 +1,5 @@
 import { jsonToGraphQLQuery, VariableType } from 'json-to-graphql-query';
-import { ClientInterface } from './client';
+import { ClientInterface } from './client.js';
 
 export enum NavigationType {
     Tree,

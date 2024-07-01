@@ -1,4 +1,4 @@
-import { Prices, Tier } from '../types/pricing';
+import { Prices, Tier } from '../types/pricing.js';
 
 export function pricesForUsageOnTier(usage: number, tiers: Tier[], tierType: 'volume' | 'graduated'): Prices {
     const sortedTiers = tiers.sort((a: Tier, b: Tier) => a.threshold - b.threshold);

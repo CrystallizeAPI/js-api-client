@@ -1,7 +1,7 @@
 // Usage: CRYSTALLIZE_TENANT_IDENTIFIER=furniture node dist/examples/massasynccall.js
 
-import { CrystallizeClient } from '..';
-import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/massCallClient';
+import { CrystallizeClient } from '../index.js';
+import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/massCallClient.js';
 
 // call of onBatchDone is not blocking. (no await done internally)
 const onBatchDone = async (batch: MassCallClientBatch): Promise<void> => {

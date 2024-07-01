@@ -1,6 +1,6 @@
 import { EnumType } from 'json-to-graphql-query';
 import { z } from 'zod';
-import { OrderCustomer, orderCustomerInputRequest } from './customer';
+import { OrderCustomer, orderCustomerInputRequest } from './customer.js';
 import {
     CashPayment,
     cashPaymentInputRequest,
@@ -13,8 +13,8 @@ import {
     paypalPaymentInputRequest,
     StripePayment,
     stripePaymentInputRequest,
-} from './payment';
-import { SubscriptionPeriodUnit, VatInfo } from './product';
+} from './payment.js';
+import { SubscriptionPeriodUnit, VatInfo } from './product.js';
 
 export const orderItemMeteredVariableInputRequest = z
     .object({

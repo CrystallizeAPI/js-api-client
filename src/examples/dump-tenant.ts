@@ -1,8 +1,8 @@
 // Usage CRYSTALLIZE_ACCESS_TOKEN_ID=xxx CRYSTALLIZE_ACCESS_TOKEN_SECRET=xxx CRYSTALLIZE_TENANT_IDENTIFIER=xxx node dist/examples/dump-tenant.js
 
-import { CrystallizeClient } from '../';
-import { createDumper } from '../core/dump-tenant/dumper';
-import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/massCallClient';
+import { CrystallizeClient } from '../index.js';
+import { createDumper } from '../core/dump-tenant/dumper.js';
+import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/massCallClient.js';
 import fs from 'fs';
 
 const onFailure = async (

@@ -1,7 +1,7 @@
-import { MassClientInterface } from '../massCallClient';
-import { buildNestedNavigationQuery, NavigationType } from '../navigation';
-import { createSearcher } from '../search';
-import { getTenantBasicQuery, getTenantQueries } from './createSpecQuery';
+import { MassClientInterface } from '../massCallClient.js';
+import { buildNestedNavigationQuery, NavigationType } from '../navigation.js';
+import { createSearcher } from '../search.js';
+import { getTenantBasicQuery, getTenantQueries } from './createSpecQuery.js';
 
 export type DumperOptions = {
     tenantIdentifier: string;

@@ -1,36 +1,31 @@
-import { jsonToGraphQLQuery } from "json-to-graphql-query";
-import { ClientInterface } from "./client";
+import { jsonToGraphQLQuery } from 'json-to-graphql-query';
+import { ClientInterface } from './client.js';
 
-type ComponentParentType = 'Root' | 'ComponentChoice' | 'ComponentMultipleChoice' | 'ContentChunk' | 'Piece'
+type ComponentParentType = 'Root' | 'ComponentChoice' | 'ComponentMultipleChoice' | 'ContentChunk' | 'Piece';
 
-const basicComponentConfig = () => ["BasicComponentConfig"]
+const basicComponentConfig = () => ['BasicComponentConfig'];
 
 const structuralComponentConfig = (parentType: ComponentParentType, level: number): any[] => {
-    const nestableComponentType: ComponentParentType[] = [
-        "Root",
-        "Piece"
-    ]
+    const nestableComponentType: ComponentParentType[] = ['Root', 'Piece'];
     if (level <= 0) {
-        return []
+        return [];
     }
 
     const piece = {
-        __typeName: "PieceComponentConfig",
+        __typeName: 'PieceComponentConfig',
         multilingual: true,
         identifier: true,
-        components: components('Piece', level - 1)
-    }
+        components: components('Piece', level - 1),
+    };
 
     // we can always have piece
     if (!nestableComponentType.includes(parentType)) {
-        return [
-            piece
-        ]
+        return [piece];
     }
 
     return [
         {
-            __typeName: "ComponentChoiceComponentConfig",
+            __typeName: 'ComponentChoiceComponentConfig',
             multilingual: true,
             choices: {
                 id: true,
@@ -39,12 +34,12 @@ const structuralComponentConfig = (parentType: ComponentParentType, level: numbe
                 type: true,
                 config: {
                     __all_on: basicComponentConfig(),
-                    __on: structuralComponentConfig('ComponentChoice', level - 1)
-                }
-            }
+                    __on: structuralComponentConfig('ComponentChoice', level - 1),
+                },
+            },
         },
         {
-            __typeName: "ComponentMultipleChoiceComponentConfig",
+            __typeName: 'ComponentMultipleChoiceComponentConfig',
             multilingual: true,
             allowDuplicates: true,
             choices: {
@@ -54,19 +49,19 @@ const structuralComponentConfig = (parentType: ComponentParentType, level: numbe
                 type: true,
                 config: {
                     __all_on: basicComponentConfig(),
-                    __on: structuralComponentConfig('ComponentMultipleChoice', level - 1)
-                }
-            }
+                    __on: structuralComponentConfig('ComponentMultipleChoice', level - 1),
+                },
+            },
         },
         {
-            __typeName: "ContentChunkComponentConfig",
+            __typeName: 'ContentChunkComponentConfig',
             multilingual: true,
             repeatable: true,
-            components: components('ContentChunk', level - 1)
+            components: components('ContentChunk', level - 1),
         },
-        piece
-    ]
-}
+        piece,
+    ];
+};
 
 const components = (parentType: ComponentParentType, level: number) => ({
     id: true,
@@ -75,43 +70,41 @@ const components = (parentType: ComponentParentType, level: number) => ({
     type: true,
     config: {
         __all_on: basicComponentConfig(),
-        __on: structuralComponentConfig(parentType, level)
-    }
-})
-
+        __on: structuralComponentConfig(parentType, level),
+    },
+});
 
 export const createShapeBrowser = (client: ClientInterface) => {
-
     const query = (identifier: string, level: number) => ({
         shape: {
             __args: {
-                identifier
+                identifier,
             },
             __on: {
-                __typeName: "Shape",
+                __typeName: 'Shape',
                 identifier: true,
                 type: true,
                 name: true,
                 meta: {
                     key: true,
-                    value: true
+                    value: true,
                 },
                 createdAt: true,
                 updatedAt: true,
                 components: components('Root', level),
-                variantComponents: components('Root', level)
-            }
-        }
-    })
+                variantComponents: components('Root', level),
+            },
+        },
+    });
 
-
-    const buildQuery = (identifier: string, level = 5) => jsonToGraphQLQuery({ query: query(identifier, level) }) + "\n" + fragments
+    const buildQuery = (identifier: string, level = 5) =>
+        jsonToGraphQLQuery({ query: query(identifier, level) }) + '\n' + fragments;
     return {
         query: buildQuery,
         fetch: async (identifier: string, level = 5) => {
             const response = await client.nextPimApi(buildQuery(identifier, level));
-        }
-    }
+        },
+    };
 };
 
 const fragments = `#graphql
@@ -225,4 +218,4 @@ fragment BasicComponentConfig on ComponentConfig {
     ...VideosComponentConfig
 }
 
-`
+`;

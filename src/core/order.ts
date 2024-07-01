@@ -1,4 +1,4 @@
-import { ClientInterface } from './client';
+import { ClientInterface } from './client.js';
 import {
     CreateOrderInputRequest,
     createOrderInputRequest,
@@ -7,7 +7,7 @@ import {
     OrderUpdatedConfirmation,
     updateOrderInputRequest,
     UpdateOrderInputRequest,
-} from '../types/order';
+} from '../types/order.js';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 
 function buildQuery(onCustomer?: any, onOrderItem?: any, extraQuery?: any) {

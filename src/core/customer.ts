@@ -4,8 +4,8 @@ import {
     CreateCustomerInputRequest,
     updateCustomerInputRequest,
     UpdateCustomerInputRequest,
-} from '../types/customer';
-import { ClientInterface } from './client';
+} from '../types/customer.js';
+import { ClientInterface } from './client.js';
 
 function convertDates(intent: CreateCustomerInputRequest | UpdateCustomerInputRequest) {
     if (!intent.birthDate) {
