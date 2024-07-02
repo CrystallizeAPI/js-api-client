@@ -1,4 +1,5 @@
-const { pricesForUsageOnTier } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { pricesForUsageOnTier } from '../src';
 
 const tiers1 = [
     {

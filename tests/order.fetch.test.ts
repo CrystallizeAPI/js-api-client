@@ -1,4 +1,5 @@
-const { CrystallizeOrderFetcherById, CrystallizeOrderFetcherByCustomerIdentifier } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { CrystallizeOrderFetcherById, CrystallizeOrderFetcherByCustomerIdentifier } from '../src';
 
 test('Oder By ID', async () => {
     const fetcher = CrystallizeOrderFetcherById;

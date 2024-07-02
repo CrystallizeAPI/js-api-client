@@ -1,4 +1,5 @@
-const { createSearcher, createClient } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { createSearcher, createClient } from '../src';
 
 test('Search Query Test', async () => {
     const CrystallizeClient = createClient({
@@ -18,6 +19,7 @@ test('Search Query Test', async () => {
     let count;
 
     count = 0;
+    //@ts-ignore
     for await (const item of createSearcher(CrystallizeClient).search('en', nodeQuery, filter, orderBy, pageInfo, {
         total: 14,
         perPage: 5,
@@ -28,6 +30,7 @@ test('Search Query Test', async () => {
     expect(count).toBe(14);
 
     count = 0;
+    //@ts-ignore
     for await (const item of createSearcher(CrystallizeClient).search('en', nodeQuery, filter, orderBy, pageInfo, {
         total: 14,
         perPage: 10,

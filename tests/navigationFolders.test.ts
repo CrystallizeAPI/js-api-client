@@ -1,5 +1,6 @@
-const { createNavigationFetcher, createClient } = require('../dist/index.js');
-const { walkTree } = require('./util');
+import { test, expect } from 'vitest';
+import { createClient, createNavigationFetcher } from '../src';
+import { walkTree } from './util';
 
 test('Test Nav fetching Node: Shop', async () => {
     const CrystallizeClient = createClient({

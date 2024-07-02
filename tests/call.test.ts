@@ -1,4 +1,5 @@
-const { createClient } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { createClient } from '../src';
 
 test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
     const CrystallizeClient = createClient({

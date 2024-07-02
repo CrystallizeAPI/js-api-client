@@ -1,4 +1,5 @@
-const { createClient, createProductHydrater } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { createClient, createProductHydrater } from '../src';
 
 test('Hydrate Skus', async () => {
     const CrystallizeClient = createClient({

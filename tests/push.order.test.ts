@@ -1,4 +1,5 @@
-const { CrystallizeOrderPusher } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { CrystallizeOrderPusher } from '../src';
 
 test('orderAPi: Test Validation', async () => {
     // it has to fail with 404 because we don't have any credentials
@@ -6,6 +7,7 @@ test('orderAPi: Test Validation', async () => {
         const caller = CrystallizeOrderPusher;
         await caller({
             customer: {
+                //@ts-ignore
                 firstName2: 'William',
                 lastName: 'Wallace',
             },

@@ -1,5 +1,6 @@
-const { createClient, createCatalogueFetcher } = require('../dist/index.js');
-const { VariableType } = require('json-to-graphql-query');
+import { test, expect } from 'vitest';
+import { createClient, createCatalogueFetcher } from '../src';
+import { VariableType } from 'json-to-graphql-query';
 
 test('Test with Profiling 1 ', async () => {
     const variables = {
@@ -9,7 +10,7 @@ test('Test with Profiling 1 ', async () => {
 
     const expectedQuery = `query ($language: String!, $path: String!) { catalogue (language: $language, path: $path) { ... on Product { name } } }`;
 
-    let profiledQuery = {};
+    let profiledQuery: any = {};
 
     const apiClient = createClient(
         {
@@ -42,7 +43,7 @@ test('Test with Profiling 1 ', async () => {
     );
 
     const fetcher = createCatalogueFetcher(apiClient);
-    const response = await fetcher(
+    const response = await fetcher<any>(
         {
             __variables: {
                 language: 'String!',

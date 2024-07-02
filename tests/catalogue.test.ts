@@ -1,5 +1,6 @@
-const { catalogueFetcherGraphqlBuilder } = require('../dist/index.js');
-const { jsonToGraphQLQuery } = require('json-to-graphql-query');
+import { test, expect } from 'vitest';
+import { catalogueFetcherGraphqlBuilder } from '../src';
+import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 
 test('Catalogue Query Builder Test', () => {
     const builder = catalogueFetcherGraphqlBuilder;

@@ -1,4 +1,5 @@
-const { CrystallizeSubscriptionContractManager } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { CrystallizeSubscriptionContractManager } from '../src';
 
 const period = {
     currency: 'eur',
@@ -95,6 +96,7 @@ test('pimAPi: Test Validation', async () => {
         const caller = CrystallizeSubscriptionContractManager.create;
         await caller({
             ...contract,
+            //@ts-ignore
             initial2: {
                 ...period,
             },
@@ -110,9 +112,11 @@ test('pimAPi Push a new Contract', async () => {
         const caller = CrystallizeSubscriptionContractManager.create;
         await caller({
             ...contract,
+            //@ts-ignore
             initial: {
                 ...period,
             },
+            //@ts-ignore
             recurring: {
                 ...period,
             },

@@ -1,4 +1,6 @@
-const { CrystallizeSubscriptionContractManager } = require('../dist/index.js');
+import { test } from 'vitest';
+import { CrystallizeSubscriptionContractManager } from '../src';
+
 test('catalogAPI: Test', async () => {
     try {
         const template =

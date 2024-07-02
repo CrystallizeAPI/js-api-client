@@ -1,4 +1,5 @@
-const { CrystallizeCreateOrderPaymentUpdater } = require('../dist/index.js');
+import { test, expect } from 'vitest';
+import { CrystallizeCreateOrderPaymentUpdater } from '../src';
 
 test('pimAPi: Update Order Payment: Test Validation', async () => {
     // it has to fail with 404 because we don't have any credentials
@@ -7,6 +8,7 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
         const result = await caller('624b2fca14fa92fb50f0b8dd', {
             payment: [
                 {
+                    //@ts-ignore
                     provider: 'custom2',
                     custom: {
                         properties: [
@@ -22,6 +24,7 @@ test('pimAPi: Update Order Payment: Test Validation', async () => {
                     },
                 },
                 {
+                    //@ts-ignore
                     provider: 'custom',
                     custom: {
                         properties: [
@@ -50,6 +53,7 @@ test('pimAPi: Update Order Payment', async () => {
         const result = await caller('624b2fca14fa92fb50f0b8dd', {
             payment: [
                 {
+                    //@ts-ignore
                     provider: 'custom',
                     custom: {
                         properties: [
@@ -65,6 +69,7 @@ test('pimAPi: Update Order Payment', async () => {
                     },
                 },
                 {
+                    //@ts-ignore
                     provider: 'custom',
                     custom: {
                         properties: [

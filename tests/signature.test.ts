@@ -1,14 +1,16 @@
-const { createSignatureVerifier, createAsyncSignatureVerifier } = require('../dist/index.js');
-var crypto = require('crypto');
+import { test, expect, describe } from 'vitest';
+import { createSignatureVerifier, createAsyncSignatureVerifier, CrystallizeSignature } from '../src';
+import crypto from 'crypto';
 
 describe('Test Signature HMAC with Deprecated Sync Function', () => {
     test('Test With a Body', () => {
         const guard = createSignatureVerifier({
             secret: 'xXx',
             sha256: (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: (token, secret) => ({
-                hmac: '1101b34dac8c55e5590a37271f1c41c3d745463854613494a1624a15be24f1f8',
-            }),
+            jwtVerify: (token, secret) =>
+                ({
+                    hmac: '1101b34dac8c55e5590a37271f1c41c3d745463854613494a1624a15be24f1f8',
+                }) as CrystallizeSignature,
         });
 
         const payload = guard('xXx.xXx.xXx', {
@@ -23,9 +25,10 @@ describe('Test Signature HMAC with Deprecated Sync Function', () => {
         const guard = createSignatureVerifier({
             secret: 'xXx',
             sha256: (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: (token, secret) => ({
-                hmac: '157bee342a4856e14e964356fef54fd84b3a3508c1071ed674172d3f9b68892f',
-            }),
+            jwtVerify: (token, secret) =>
+                ({
+                    hmac: '157bee342a4856e14e964356fef54fd84b3a3508c1071ed674172d3f9b68892f',
+                }) as CrystallizeSignature,
         });
         const payload = guard('xXx.xXx.xXx', {
             url: 'https://helloworld.crystallize.app.local',
@@ -39,9 +42,10 @@ describe('Test Signature HMAC with Deprecated Sync Function', () => {
         const guard = createSignatureVerifier({
             secret: 'xXx',
             sha256: (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: (token, secret) => ({
-                hmac: '61ce7a2e5072900a13369ac7f69b9e056e91c38c42f1bfe94389c80411d94b78',
-            }),
+            jwtVerify: (token, secret) =>
+                ({
+                    hmac: '61ce7a2e5072900a13369ac7f69b9e056e91c38c42f1bfe94389c80411d94b78',
+                }) as CrystallizeSignature,
         });
 
         const payload = guard('xXx.xXx.xXx', {
@@ -59,9 +63,10 @@ describe('Test Signature HMAC with Async verifier and ASync Functions', () => {
         const guard = createAsyncSignatureVerifier({
             secret: 'xXx',
             sha256: async (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: async (token, secret) => ({
-                hmac: '1101b34dac8c55e5590a37271f1c41c3d745463854613494a1624a15be24f1f8',
-            }),
+            jwtVerify: async (token, secret) =>
+                ({
+                    hmac: '1101b34dac8c55e5590a37271f1c41c3d745463854613494a1624a15be24f1f8',
+                }) as CrystallizeSignature,
         });
 
         const payload = await guard('xXx.xXx.xXx', {
@@ -76,9 +81,10 @@ describe('Test Signature HMAC with Async verifier and ASync Functions', () => {
         const guard = createAsyncSignatureVerifier({
             secret: 'xXx',
             sha256: async (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: async (token, secret) => ({
-                hmac: '157bee342a4856e14e964356fef54fd84b3a3508c1071ed674172d3f9b68892f',
-            }),
+            jwtVerify: async (token, secret) =>
+                ({
+                    hmac: '157bee342a4856e14e964356fef54fd84b3a3508c1071ed674172d3f9b68892f',
+                }) as CrystallizeSignature,
         });
         const payload = await guard('xXx.xXx.xXx', {
             url: 'https://helloworld.crystallize.app.local',
@@ -92,9 +98,10 @@ describe('Test Signature HMAC with Async verifier and ASync Functions', () => {
         const guard = createAsyncSignatureVerifier({
             secret: 'xXx',
             sha256: async (data) => crypto.createHash('sha256').update(data).digest('hex'),
-            jwtVerify: async (token, secret) => ({
-                hmac: '61ce7a2e5072900a13369ac7f69b9e056e91c38c42f1bfe94389c80411d94b78',
-            }),
+            jwtVerify: async (token, secret) =>
+                ({
+                    hmac: '61ce7a2e5072900a13369ac7f69b9e056e91c38c42f1bfe94389c80411d94b78',
+                }) as CrystallizeSignature,
         });
 
         const payload = await guard('xXx.xXx.xXx', {
