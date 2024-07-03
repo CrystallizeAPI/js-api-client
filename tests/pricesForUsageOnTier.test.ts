@@ -118,7 +118,7 @@ test('Price For Volume', () => {
     expect(pricesForUsageOnTier(131, tiers2, 'volume')).toEqual({ EUR: 11600 });
 });
 
-test.only('Price For Graduated', () => {
+test('Price For Graduated', () => {
     expect(pricesForUsageOnTier(4, tiers3, 'graduated')).toEqual({ EUR: 19 });
     expect(pricesForUsageOnTier(211, tiers3, 'graduated')).toEqual({ EUR: 304 });
     expect(pricesForUsageOnTier(14, tiers4, 'graduated')).toEqual({ EUR: 0 });

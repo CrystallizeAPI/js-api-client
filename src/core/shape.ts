@@ -75,27 +75,30 @@ const components = (parentType: ComponentParentType, level: number) => ({
 });
 
 export const createShapeBrowser = (client: ClientInterface) => {
-    const query = (identifier: string, level: number) => ({
-        shape: {
-            __args: {
-                identifier,
-            },
-            __on: {
-                __typeName: 'Shape',
-                identifier: true,
-                type: true,
-                name: true,
-                meta: {
-                    key: true,
-                    value: true,
+    const query = (identifier: string, level: number) => {
+        const componentList = components('Root', level);
+        return {
+            shape: {
+                __args: {
+                    identifier,
                 },
-                createdAt: true,
-                updatedAt: true,
-                components: components('Root', level),
-                variantComponents: components('Root', level),
+                __on: {
+                    __typeName: 'Shape',
+                    identifier: true,
+                    type: true,
+                    name: true,
+                    meta: {
+                        key: true,
+                        value: true,
+                    },
+                    createdAt: true,
+                    updatedAt: true,
+                    components: componentList,
+                    variantComponents: componentList,
+                },
             },
-        },
-    });
+        };
+    };
 
     const buildQuery = (identifier: string, level = 5) =>
         jsonToGraphQLQuery({ query: query(identifier, level) }) + '\n' + fragments;
