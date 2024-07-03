@@ -6,7 +6,7 @@ type Deps = {
     apiClient: ClientInterface;
 };
 
-export const placeCart = async (cartId: string, { apiClient }: Deps, extraQuery?: any): Promise<void> => {
+export const placeCart = async (cartId: string, { apiClient }: Deps, extraQuery?: any) => {
     const mutation = {
         place: {
             __args: {
@@ -75,7 +75,7 @@ export const setCartMeta = async (
     merge: Boolean,
     { apiClient }: Deps,
     extraQuery?: any,
-): Promise<void> => {
+) => {
     const mutation = {
         setMeta: {
             __args: {
@@ -97,7 +97,7 @@ export const setCartCustomer = async (
     isGuest: boolean,
     { apiClient }: Deps,
     extraQuery?: any,
-): Promise<void> => {
+) => {
     const mutation = {
         setCustomer: {
             __args: {
