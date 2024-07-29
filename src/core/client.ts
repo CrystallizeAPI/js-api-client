@@ -252,24 +252,32 @@ export function createClient(configuration: ClientConfiguration, options?: Creat
         if (options?.useHttp2 !== true) {
             return fetch(url, grabOptions);
         }
+        const closeAndDeleteClient = (origin: string) => {
+            const clientObj = clients.get(origin);
+            if (clientObj) {
+                clientObj.client.close();
+                clients.delete(origin);
+            }
+        };
+
         const resetIdleTimeout = (origin: string) => {
             const clientObj = clients.get(origin);
-            if (clientObj.idleTimeout) {
+            if (clientObj && clientObj.idleTimeout) {
                 clearTimeout(clientObj.idleTimeout);
             }
             clientObj.idleTimeout = setTimeout(() => {
-                clientObj.client.close();
-                clients.delete(origin);
+                closeAndDeleteClient(origin);
             }, IDLE_TIMEOUT);
         };
+
         const getClient = (origin: string): http2.ClientHttp2Session => {
-            if (!clients.has(origin)) {
+            if (!clients.has(origin) || clients.get(origin).client.closed) {
+                closeAndDeleteClient(origin);
                 const client = http2.connect(origin);
                 client.on('error', () => {
-                    client.close();
-                    clients.delete(origin);
+                    closeAndDeleteClient(origin);
                 });
-                clients.set(origin, { client, lastUsed: Date.now(), idleTimeout: null });
+                clients.set(origin, { client, idleTimeout: null });
                 resetIdleTimeout(origin);
             }
             return clients.get(origin).client;
