@@ -192,6 +192,7 @@ export function createMassCallClient(
         shopCartApi: client.shopCartApi,
         nextPimApi: client.nextPimApi,
         config: client.config,
+        close: client.close,
         enqueue: {
             catalogueApi: (query: string, variables?: VariablesType): string => {
                 const key = `catalogueApi-${counter++}`;

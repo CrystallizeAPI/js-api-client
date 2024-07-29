@@ -1,3 +1,5 @@
+import http2 from 'node:http2';
+
 export type ClientConfiguration = {
     tenantIdentifier: string;
     tenantId?: string;
@@ -8,6 +10,18 @@ export type ClientConfiguration = {
     shopApiToken?: string;
     origin?: string;
 };
+
+type GrabResponse = {
+    ok: boolean;
+    status: number;
+    statusText: string;
+    headers: {
+        get: (name: string) => string | string[] | undefined | null;
+    };
+    json: <T>() => Promise<T>;
+    text: () => Promise<string>;
+};
+type Grab = (url: string, options?: RequestInit | any | undefined) => Promise<GrabResponse>;
 
 type ProfilingOptions = {
     onRequest?: (query: string, variables?: VariablesType) => void;
@@ -25,6 +39,7 @@ type ProfilingOptions = {
 };
 
 export type CreateClientOptions = {
+    useHttp2?: boolean;
     profiling?: ProfilingOptions;
     shopApiToken?: {
         doNotFetch?: boolean;
@@ -45,6 +60,7 @@ export type ClientInterface = {
     nextPimApi: ApiCaller<any>;
     shopCartApi: ApiCaller<any>;
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
+    close: () => void;
 };
 
 function authenticationHeaders(config: ClientConfiguration): Record<string, string> {
@@ -65,15 +81,17 @@ function authenticationHeaders(config: ClientConfiguration): Record<string, stri
 }
 
 async function post<T>(
+    grab: Grab,
     path: string,
     config: ClientConfiguration,
     query: string,
     variables?: VariablesType,
     init?: RequestInit | any | undefined,
-    profiling?: ProfilingOptions,
+    options?: CreateClientOptions,
 ): Promise<T> {
     try {
         const { headers: initHeaders, ...initRest } = init || {};
+        const profiling = options?.profiling;
 
         const headers = {
             'Content-type': 'application/json; charset=UTF-8',
@@ -91,7 +109,7 @@ async function post<T>(
             }
         }
 
-        const response = await fetch(path, {
+        const response = await grab(path, {
             ...initRest,
             method: 'POST',
             headers,
@@ -100,7 +118,10 @@ async function post<T>(
 
         if (profiling) {
             const ms = Date.now() - start;
-            const serverTiming = response.headers.get('server-timing') ?? undefined;
+            let serverTiming = response.headers.get('server-timing') ?? undefined;
+            if (Array.isArray(serverTiming)) {
+                serverTiming = serverTiming[0];
+            }
             const duration = serverTiming?.split(';')[1]?.split('=')[1] ?? -1;
             profiling.onRequestResolved(
                 {
@@ -115,7 +136,10 @@ async function post<T>(
             return <T>{};
         }
         if (!response.ok) {
-            const json = await response.json();
+            const json = await response.json<{
+                message: string;
+                errors: unknown;
+            }>();
             throw {
                 code: response.status,
                 statusText: response.statusText,
@@ -124,7 +148,12 @@ async function post<T>(
             };
         }
         // we still need to check for error as the API can return 200 with errors
-        const json = await response.json();
+        const json = await response.json<{
+            errors: {
+                message: string;
+            }[];
+            data: T;
+        }>();
         if (json.errors) {
             throw {
                 code: 400,
@@ -134,7 +163,7 @@ async function post<T>(
             };
         }
 
-        return <T>json.data;
+        return json.data;
     } catch (exception) {
         throw exception;
     }
@@ -147,12 +176,13 @@ function apiHost(configuration: ClientConfiguration) {
 }
 
 function createApiCaller(
+    grab: Grab,
     uri: string,
     configuration: ClientConfiguration,
     options?: CreateClientOptions,
 ): ApiCaller<any> {
     return function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
-        return post<T>(uri, configuration, query, variables, undefined, options?.profiling);
+        return post<T>(grab, uri, configuration, query, variables, undefined, options);
     };
 }
 
@@ -162,7 +192,8 @@ const getExpirationAtFromToken = (token: string) => {
     const parsedPayload = JSON.parse(decodedPayload);
     return parsedPayload.exp * 1000;
 };
-function shopApiCaller(configuration: ClientConfiguration, options?: CreateClientOptions) {
+
+function shopApiCaller(grab: Grab, configuration: ClientConfiguration, options?: CreateClientOptions) {
     const identifier = configuration.tenantIdentifier;
     let shopApiToken = configuration.shopApiToken;
     return async function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
@@ -176,7 +207,7 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
                 Accept: 'application/json',
                 ...authenticationHeaders(withoutStaticAuthToken),
             };
-            const response = await fetch(apiHost(configuration)([`@${identifier}`, 'auth', 'token'], 'shop-api'), {
+            const response = await grab(apiHost(configuration)([`@${identifier}`, 'auth', 'token'], 'shop-api'), {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
@@ -184,13 +215,18 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
                     expiresIn: options?.shopApiToken?.expiresIn || 3600 * 12,
                 }),
             });
-            const results = await response.json();
+            const results = await response.json<{
+                success: boolean;
+                token: string;
+                error?: string;
+            }>();
             if (results.success !== true) {
                 throw new Error('Could not fetch shop api token: ' + results.error);
             }
             shopApiToken = results.token;
         }
         return post<T>(
+            grab,
             apiHost(configuration)([`@${identifier}`, 'cart'], 'shop-api'),
             {
                 ...configuration,
@@ -203,13 +239,94 @@ function shopApiCaller(configuration: ClientConfiguration, options?: CreateClien
                     Authorization: `Bearer ${shopApiToken}`,
                 },
             },
-            options?.profiling,
+            options,
         );
     };
 }
 
 export function createClient(configuration: ClientConfiguration, options?: CreateClientOptions): ClientInterface {
     const identifier = configuration.tenantIdentifier;
+    const clients = new Map();
+    const IDLE_TIMEOUT = 300000; // 5 min idle timeout
+    const grab: Grab = (url, grabOptions) => {
+        if (options?.useHttp2 !== true) {
+            return fetch(url, grabOptions);
+        }
+        const resetIdleTimeout = (origin: string) => {
+            const clientObj = clients.get(origin);
+            if (clientObj.idleTimeout) {
+                clearTimeout(clientObj.idleTimeout);
+            }
+            clientObj.idleTimeout = setTimeout(() => {
+                clientObj.client.close();
+                clients.delete(origin);
+            }, IDLE_TIMEOUT);
+        };
+        const getClient = (origin: string): http2.ClientHttp2Session => {
+            if (!clients.has(origin)) {
+                const client = http2.connect(origin);
+                client.on('error', () => {
+                    client.close();
+                    clients.delete(origin);
+                });
+                clients.set(origin, { client, lastUsed: Date.now(), idleTimeout: null });
+                resetIdleTimeout(origin);
+            }
+            return clients.get(origin).client;
+        };
+
+        return new Promise((resolve, reject) => {
+            const urlObj = new URL(url);
+            const origin = urlObj.origin;
+            const client = getClient(origin);
+            resetIdleTimeout(origin);
+            const headers = {
+                ':method': grabOptions.method || 'GET',
+                ':path': urlObj.pathname + urlObj.search,
+                ...grabOptions.headers,
+            };
+            const req = client.request(headers);
+            if (grabOptions.body) {
+                req.write(grabOptions.body);
+            }
+            req.setEncoding('utf8');
+            let responseData = '';
+
+            req.on('response', (headers) => {
+                const responseHeaders: Record<string, string | string[] | undefined> = {};
+                for (const name in headers) {
+                    responseHeaders[name.toLowerCase()] = headers[name];
+                }
+                const status = headers[':status'] || 500; // Default to 500 if undefined
+                const statusText = statusTexts[status as keyof typeof statusTexts] || '';
+                const response = {
+                    status,
+                    statusText,
+                    ok: status >= 200 && status < 300,
+                    headers: {
+                        get: (name: string) => responseHeaders[name.toLowerCase()],
+                    },
+                    text: () => Promise.resolve(responseData),
+                    json: () => Promise.resolve(JSON.parse(responseData)),
+                };
+
+                req.on('data', (chunk) => {
+                    responseData += chunk;
+                });
+
+                req.on('end', () => {
+                    resetIdleTimeout(origin);
+                    resolve(response);
+                });
+
+                req.on('error', (err) => {
+                    resetIdleTimeout(origin);
+                    reject(err);
+                });
+            });
+            req.end();
+        });
+    };
 
     // let's rewrite the configuration based on the need of the endpoint
     // authenticationHeaders manages this priority: sessionId > staticAuthToken > accessTokenId/accessTokenSecret
@@ -243,21 +360,95 @@ export function createClient(configuration: ClientConfiguration, options?: Creat
     };
 
     return {
-        catalogueApi: createApiCaller(apiHost(configuration)([identifier, 'catalogue']), catalogConfig, options),
-        searchApi: createApiCaller(apiHost(configuration)([identifier, 'search']), catalogConfig, options),
-        orderApi: createApiCaller(apiHost(configuration)([identifier, 'orders']), tokenOnlyConfig, options),
+        catalogueApi: createApiCaller(grab, apiHost(configuration)([identifier, 'catalogue']), catalogConfig, options),
+        searchApi: createApiCaller(grab, apiHost(configuration)([identifier, 'search']), catalogConfig, options),
+        orderApi: createApiCaller(grab, apiHost(configuration)([identifier, 'orders']), tokenOnlyConfig, options),
         subscriptionApi: createApiCaller(
+            grab,
             apiHost(configuration)([identifier, 'subscriptions']),
             tokenOnlyConfig,
             options,
         ),
-        pimApi: createApiCaller(apiHost(configuration)(['graphql'], 'pim'), pimConfig, options),
-        nextPimApi: createApiCaller(apiHost(configuration)([`@${identifier}`]), pimConfig, options),
-        shopCartApi: shopApiCaller(configuration, options),
+        pimApi: createApiCaller(grab, apiHost(configuration)(['graphql'], 'pim'), pimConfig, options),
+        nextPimApi: createApiCaller(grab, apiHost(configuration)([`@${identifier}`]), pimConfig, options),
+        shopCartApi: shopApiCaller(grab, configuration, options),
         config: {
             tenantId: configuration.tenantId,
             tenantIdentifier: configuration.tenantIdentifier,
             origin: configuration.origin,
         },
+        close: () => {
+            clients.forEach((clientObj) => {
+                if (clientObj.idleTimeout) {
+                    clearTimeout(clientObj.idleTimeout);
+                }
+                clientObj.client.close();
+            });
+            clients.clear();
+        },
     };
 }
+
+const statusTexts = {
+    100: 'Continue',
+    101: 'Switching Protocols',
+    102: 'Processing',
+    200: 'OK',
+    201: 'Created',
+    202: 'Accepted',
+    203: 'Non-Authoritative Information',
+    204: 'No Content',
+    205: 'Reset Content',
+    206: 'Partial Content',
+    207: 'Multi-Status',
+    208: 'Already Reported',
+    226: 'IM Used',
+    300: 'Multiple Choices',
+    301: 'Moved Permanently',
+    302: 'Found',
+    303: 'See Other',
+    304: 'Not Modified',
+    305: 'Use Proxy',
+    307: 'Temporary Redirect',
+    308: 'Permanent Redirect',
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    402: 'Payment Required',
+    403: 'Forbidden',
+    404: 'Not Found',
+    405: 'Method Not Allowed',
+    406: 'Not Acceptable',
+    407: 'Proxy Authentication Required',
+    408: 'Request Timeout',
+    409: 'Conflict',
+    410: 'Gone',
+    411: 'Length Required',
+    412: 'Precondition Failed',
+    413: 'Payload Too Large',
+    414: 'URI Too Long',
+    415: 'Unsupported Media Type',
+    416: 'Range Not Satisfiable',
+    417: 'Expectation Failed',
+    418: "I'm a teapot",
+    421: 'Misdirected Request',
+    422: 'Unprocessable Entity',
+    423: 'Locked',
+    424: 'Failed Dependency',
+    425: 'Too Early',
+    426: 'Upgrade Required',
+    428: 'Precondition Required',
+    429: 'Too Many Requests',
+    431: 'Request Header Fields Too Large',
+    451: 'Unavailable For Legal Reasons',
+    500: 'Internal Server Error',
+    501: 'Not Implemented',
+    502: 'Bad Gateway',
+    503: 'Service Unavailable',
+    504: 'Gateway Timeout',
+    505: 'HTTP Version Not Supported',
+    506: 'Variant Also Negotiates',
+    507: 'Insufficient Storage',
+    508: 'Loop Detected',
+    510: 'Not Extended',
+    511: 'Network Authentication Required',
+} as const;

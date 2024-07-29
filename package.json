@@ -1,7 +1,7 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "type": "module",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
@@ -42,6 +42,8 @@
         "zod": "^3.23.8"
     },
     "browser": {
-        "fs": false
+        "fs": false,
+        "node:http2": false,
+        "http2": false
     }
 }
