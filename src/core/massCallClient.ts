@@ -24,12 +24,14 @@ export type MassClientInterface = ClientInterface & {
     orderApi: ApiCaller<any>;
     subscriptionApi: ApiCaller<any>;
     pimApi: ApiCaller<any>;
+    nextPimApi: ApiCaller<any>;
     enqueue: {
         catalogueApi: QueuedApiCaller;
         searchApi: QueuedApiCaller;
         orderApi: QueuedApiCaller;
         subscriptionApi: QueuedApiCaller;
         pimApi: QueuedApiCaller;
+        nextPimApi: QueuedApiCaller;
     };
 };
 
@@ -217,6 +219,11 @@ export function createMassCallClient(
             pimApi: (query: string, variables?: VariablesType): string => {
                 const key = `pimApi-${counter++}`;
                 promises.push({ key, caller: client.pimApi, query, variables });
+                return key;
+            },
+            nextPimApi: (query: string, variables?: VariablesType): string => {
+                const key = `nextPimApi-${counter++}`;
+                promises.push({ key, caller: client.nextPimApi, query, variables });
                 return key;
             },
         },
