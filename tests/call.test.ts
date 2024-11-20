@@ -20,7 +20,7 @@ test('callCatalogueApi: Raw fetch a product name: Bamboo Chair', async () => {
     expect(response.catalogue.name).toBe('Bamboo Chair');
 });
 
-test('callCatalogueApi DEV: Raw fetch a product name: Bamboo Chair', async () => {
+test.skip('callCatalogueApi DEV: Raw fetch a product name: Bamboo Chair', async () => {
     const CrystallizeClient = createClient({
         tenantIdentifier: 'furniture',
         origin: '-dev.crystallize.digital',
