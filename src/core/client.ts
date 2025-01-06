@@ -41,6 +41,7 @@ type ProfilingOptions = {
 export type CreateClientOptions = {
     useHttp2?: boolean;
     profiling?: ProfilingOptions;
+    extraHeaders?: RequestInit['headers'];
     shopApiToken?: {
         doNotFetch?: boolean;
         scopes?: string[];
@@ -183,7 +184,19 @@ function createApiCaller(
     options?: CreateClientOptions,
 ): ApiCaller<any> {
     return function callApi<T>(query: string, variables?: VariablesType): Promise<T> {
-        return post<T>(grab, uri, configuration, query, variables, undefined, options);
+        return post<T>(
+            grab,
+            uri,
+            configuration,
+            query,
+            variables,
+            options?.extraHeaders
+                ? {
+                      headers: options.extraHeaders,
+                  }
+                : undefined,
+            options,
+        );
     };
 }
 
