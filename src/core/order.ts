@@ -180,6 +180,23 @@ function convertDates(intent: CreateOrderInputRequest | UpdateOrderInputRequest)
         }),
     };
 }
+export function createOrderPipelineStageSetter(apiClient: ClientInterface) {
+    return async function putInPipelineStage(id: string, pipelineId: string, stageId: string) {
+        const mutation = {
+            order: {
+                setPipelineStage: {
+                    __args: {
+                        orderId: id,
+                        pipelineId: pipelineId,
+                        stageId: stageId,
+                    },
+                    id: true,
+                },
+            },
+        };
+        await apiClient.pimApi(jsonToGraphQLQuery({ mutation }));
+    };
+}
 
 export function createOrderPusher(apiClient: ClientInterface) {
     return async function pushOrder(intentOrder: CreateOrderInputRequest): Promise<OrderCreatedConfirmation> {

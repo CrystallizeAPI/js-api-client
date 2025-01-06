@@ -27,6 +27,7 @@ export type MassClientInterface = ClientInterface & {
     nextPimApi: ApiCaller<any>;
     enqueue: {
         catalogueApi: QueuedApiCaller;
+        discoveryApi: QueuedApiCaller;
         searchApi: QueuedApiCaller;
         orderApi: QueuedApiCaller;
         subscriptionApi: QueuedApiCaller;
@@ -187,6 +188,7 @@ export function createMassCallClient(
             return await execute();
         },
         catalogueApi: client.catalogueApi,
+        discoveryApi: client.discoveryApi,
         searchApi: client.searchApi,
         orderApi: client.orderApi,
         subscriptionApi: client.subscriptionApi,
@@ -199,6 +201,11 @@ export function createMassCallClient(
             catalogueApi: (query: string, variables?: VariablesType): string => {
                 const key = `catalogueApi-${counter++}`;
                 promises.push({ key, caller: client.catalogueApi, query, variables });
+                return key;
+            },
+            discoveryApi: (query: string, variables?: VariablesType): string => {
+                const key = `discoveryApi-${counter++}`;
+                promises.push({ key, caller: client.discoveryApi, query, variables });
                 return key;
             },
             searchApi: (query: string, variables?: VariablesType): string => {

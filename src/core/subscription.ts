@@ -11,6 +11,7 @@ import {
 import {
     createSubscriptionContractInputRequest,
     CreateSubscriptionContractInputRequest,
+    SubscriptionContract,
     SubscriptionContractMeteredVariableReferenceInputRequest,
     SubscriptionContractMeteredVariableTierInputRequest,
     SubscriptionContractPhaseInput,
@@ -210,6 +211,8 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
             item: {
                 sku: variant.sku,
                 name: variant.name || '',
+                quantity: 1,
+                imageUrl: variant.firstImage?.url || '',
             },
             subscriptionPlan: {
                 identifier: matchingPlan.identifier,
@@ -222,9 +225,6 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
         return contract;
     };
 
-    /**
-     * This function fetch it all
-     */
     const createSubscriptionContractTemplateBasedOnVariantIdentity = async (
         path: string,
         productVariantIdentifier: { sku?: string; id?: string },
@@ -289,10 +289,255 @@ export function createSubscriptionContractManager(apiClient: ClientInterface) {
             priceVariantIdentifier,
         );
     };
+
+    const fetchById = async (id: string, onCustomer?: any, extraQuery?: any): Promise<SubscriptionContract> => {
+        const query = {
+            subscriptionContract: {
+                get: {
+                    __args: {
+                        id,
+                    },
+                    ...SubscriptionContractQuery(onCustomer, extraQuery),
+                },
+            },
+        };
+        const data = await apiClient.pimApi(jsonToGraphQLQuery({ query }));
+        return data.subscriptionContract.get;
+    };
+
+    const fetchByCustomerIdentifier = async (
+        customerIdentifier: string,
+        extraQueryArgs?: any,
+        onCustomer?: any,
+        extraQuery?: any,
+    ): Promise<{
+        pageInfo: {
+            hasNextPage: boolean;
+            hasPreviousPage: boolean;
+            startCursor: string;
+            endCursor: string;
+            totalNodes: number;
+        };
+        contracts: SubscriptionContract[];
+    }> => {
+        const query = {
+            subscriptionContract: {
+                getMany: {
+                    __args: {
+                        customerIdentifier: customerIdentifier,
+                        tenantId: apiClient.config.tenantId,
+                        ...(extraQueryArgs !== undefined ? extraQueryArgs : {}),
+                    },
+                    pageInfo: {
+                        hasPreviousPage: true,
+                        hasNextPage: true,
+                        startCursor: true,
+                        endCursor: true,
+                        totalNodes: true,
+                    },
+                    edges: {
+                        cursor: true,
+                        node: SubscriptionContractQuery(onCustomer, extraQuery),
+                    },
+                },
+            },
+        };
+        const response = await apiClient.pimApi(jsonToGraphQLQuery({ query }));
+        return {
+            pageInfo: response.subscriptionContract.getMany.pageInfo,
+            contracts: response.subscriptionContract.getMany?.edges?.map((edge: any) => edge.node) || [],
+        };
+    };
+
+    const getCurrentPhase = async (id: string): Promise<'initial' | 'recurring'> => {
+        const query = {
+            subscriptionContractEvent: {
+                getMany: {
+                    __args: {
+                        subscriptionContractId: id,
+                        tenantId: apiClient.config.tenantId,
+                        sort: new EnumType('asc'),
+                        first: 1,
+                        eventTypes: new EnumType('renewed'),
+                    },
+                    edges: {
+                        node: {
+                            id: true,
+                        },
+                    },
+                },
+            },
+        };
+        const contractUsage = await apiClient.pimApi(jsonToGraphQLQuery({ query }));
+        return contractUsage.subscriptionContractEvent.getMany.edges.length > 0 ? 'recurring' : 'initial';
+    };
+
+    const getUsageForPeriod = async (
+        id: string,
+        from: Date,
+        to: Date,
+    ): Promise<
+        {
+            meteredVariableId: string;
+            quantity: number;
+        }[]
+    > => {
+        const query = {
+            subscriptionContract: {
+                get: {
+                    __args: {
+                        id,
+                    },
+                    id: true,
+                    usage: {
+                        __args: {
+                            start: from.toISOString(),
+                            end: to.toISOString(),
+                        },
+                        meteredVariableId: true,
+                        quantity: true,
+                    },
+                },
+            },
+        };
+        const contractUsage = await apiClient.pimApi(jsonToGraphQLQuery({ query }));
+        return contractUsage.subscriptionContract.get.usage;
+    };
+
     return {
         create,
         update,
+        fetchById,
+        fetchByCustomerIdentifier,
+        getCurrentPhase,
+        getUsageForPeriod,
         createSubscriptionContractTemplateBasedOnVariantIdentity,
         createSubscriptionContractTemplateBasedOnVariant,
     };
 }
+
+const SubscriptionContractQuery = (onCustomer?: any, extraQuery?: any) => {
+    return {
+        id: true,
+        tenantId: true,
+        subscriptionPlan: {
+            name: true,
+            identifier: true,
+            meteredVariables: {
+                id: true,
+                identifier: true,
+                name: true,
+                unit: true,
+            },
+        },
+        item: {
+            name: true,
+            sku: true,
+            quantity: true,
+            meta: {
+                key: true,
+                value: true,
+            },
+        },
+        initial: {
+            period: true,
+            unit: true,
+            price: true,
+            currency: true,
+            meteredVariables: {
+                id: true,
+                name: true,
+                identifier: true,
+                unit: true,
+                tierType: true,
+                tiers: {
+                    currency: true,
+                    threshold: true,
+                    price: true,
+                },
+            },
+        },
+        recurring: {
+            period: true,
+            unit: true,
+            price: true,
+            currency: true,
+            meteredVariables: {
+                id: true,
+                name: true,
+                identifier: true,
+                unit: true,
+                tierType: true,
+                tiers: {
+                    currency: true,
+                    threshold: true,
+                    price: true,
+                },
+            },
+        },
+        status: {
+            renewAt: true,
+            activeUntil: true,
+            price: true,
+            currency: true,
+        },
+        meta: {
+            key: true,
+            value: true,
+        },
+        addresses: {
+            type: true,
+            lastName: true,
+            firstName: true,
+            email: true,
+            middleName: true,
+            street: true,
+            street2: true,
+            city: true,
+            country: true,
+            state: true,
+            postalCode: true,
+            phone: true,
+            streetNumber: true,
+        },
+        customerIdentifier: true,
+        customer: {
+            identifier: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            phone: true,
+            taxNumber: true,
+            meta: {
+                key: true,
+                value: true,
+            },
+            externalReferences: {
+                key: true,
+                value: true,
+            },
+            addresses: {
+                type: true,
+                lastName: true,
+                firstName: true,
+                email: true,
+                middleName: true,
+                street: true,
+                street2: true,
+                city: true,
+                country: true,
+                state: true,
+                postalCode: true,
+                phone: true,
+                streetNumber: true,
+                meta: {
+                    key: true,
+                    value: true,
+                },
+            },
+            ...(onCustomer !== undefined ? onCustomer : {}),
+        },
+        ...(extraQuery !== undefined ? extraQuery : {}),
+    };
+};

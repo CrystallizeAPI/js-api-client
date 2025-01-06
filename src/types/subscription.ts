@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { EnumType } from 'json-to-graphql-query';
-import { paymentInputRequest } from './order.js';
-import { addressInputRequest } from './address.js';
+import { Payment, paymentInputRequest } from './order.js';
+import { Address, addressInputRequest } from './address.js';
 
 export const subscriptionContractMetadataInputRequest = z
     .object({
@@ -39,6 +39,14 @@ export const subscriptionContractPhaseInputRequest = z
         currency: z.string(),
         price: z.number(),
         meteredVariables: z.array(subscriptionContractMeteredVariableReferenceInputRequest),
+        productVariants: z
+            .array(
+                z.object({
+                    sku: z.string(),
+                    quantity: z.number(),
+                }),
+            )
+            .optional(),
     })
     .strict();
 export type SubscriptionContractPhaseInput = z.infer<typeof subscriptionContractPhaseInputRequest>;
@@ -64,11 +72,13 @@ export const createSubscriptionContractInputRequest = z
         item: z.object({
             sku: z.string(),
             name: z.string(),
+            quantity: z.number().optional(),
             imageUrl: z.string().optional(),
             meta: z.array(subscriptionContractMetadataInputRequest).optional(),
         }),
         initial: subscriptionContractPhaseInputRequest.optional(),
         recurring: subscriptionContractPhaseInputRequest.optional(),
+        meta: z.array(subscriptionContractMetadataInputRequest).optional(),
     })
     .strict();
 export type CreateSubscriptionContractInputRequest = z.infer<typeof createSubscriptionContractInputRequest>;
@@ -90,12 +100,14 @@ export const updateSubscriptionContractInputRequest = z
             .object({
                 sku: z.string().optional(),
                 name: z.string().optional(),
+                quantity: z.number().optional(),
                 imageUrl: z.string().optional(),
                 meta: z.array(subscriptionContractMetadataInputRequest).optional(),
             })
             .optional(),
         initial: subscriptionContractPhaseInputRequest.optional(),
         recurring: subscriptionContractPhaseInputRequest.optional(),
+        meta: z.array(subscriptionContractMetadataInputRequest).optional(),
     })
     .strict();
 export type UpdateSubscriptionContractInputRequest = z.infer<typeof updateSubscriptionContractInputRequest>;
@@ -104,3 +116,81 @@ export type SubscriptionContractInnerDefinition = Omit<
     CreateSubscriptionContractInputRequest,
     'customerIdentifier' | 'payment' | 'addresses' | 'tenantId' | 'status'
 >;
+
+type PlanMeteredVariable = {
+    id: string;
+    identifier: string;
+    name?: string;
+    unit: string;
+};
+
+type MeteredVariable = PlanMeteredVariable & {
+    id: string;
+    tierType: string;
+    tiers: {
+        currency: string;
+        threshold: number;
+        price: number;
+    }[];
+};
+
+type Phase = {
+    period: number;
+    unit: string;
+    price: number;
+    currency: string;
+    meteredVariables?: MeteredVariable[];
+};
+
+export type SubscriptionContract = {
+    id: string;
+    customerIdentifier: string;
+    tenantId: string;
+    subscriptionPlan: {
+        name: string;
+        identifier: string;
+        meteredVariables: PlanMeteredVariable[];
+    };
+    item: {
+        name: string;
+        sku: string;
+        imageUrl?: string;
+        quantity?: number;
+        meta?: {
+            key: string;
+            value?: string;
+        };
+    };
+    payment: Payment;
+    initial?: Phase;
+    recurring: Phase;
+    status: {
+        renewAt: string;
+        activeUntil: string;
+        price: number;
+        currency: string;
+    };
+    meta?: {
+        key: string;
+        value?: string;
+    }[];
+    customer?: {
+        identifier: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        companyName: string;
+        phone: string;
+        taxNumber: string;
+        meta: {
+            key: string;
+            value: string;
+        }[];
+        externalReferences: {
+            key: string;
+            value: string;
+        }[];
+        addresses?: Address[];
+    };
+    addresses?: Address[];
+};

@@ -10,8 +10,10 @@ So far, the available helpers are:
 -   Mass Call Client that relies on the Client for mass operations
 -   Catalogue Fetcher
 -   Searcher
--   Order Payment Updater
--   Order Pusher
+-   Order
+    -   Payment Updater
+    -   Pusher
+    -   Pipeline Stage Setter
 -   Product Hydrater
     -   Paths
     -   Skus
@@ -399,6 +401,15 @@ const result = await caller('xXxYyYZzZ', {
 });
 ```
 
+## Order Pipeline Stage Setter
+
+You can use the *CrystallizeCreateOrderPipelineStageSetter* to put an order into a specific pipeline stage.
+
+```javascript
+const caller = CrystallizeCreateOrderPipelineStageSetter;
+const result = await caller(orderId, pipelineId, stageId);
+```
+
 ## Searcher
 
 You can use the *CrystallizeSearcher* to search through the Search API in a more sophisticated way.
@@ -524,6 +535,13 @@ An Update method exists as well:
 ```javascript
 await CrystallizeSubscriptionContractManager.update(contractId, cleanUpdateContract);
 ```
+
+There is also 3 other helpers that you will most likely use and that work the same as Order Fetcher:
+
+-   `CrystallizeSubscriptionContractManager.fetchById`,
+-   `CrystallizeSubscriptionContractManager.fetchByCustomerIdentifier`,
+-   `CrystallizeSubscriptionContractManager.getCurrentPhase`,
+-   `CrystallizeSubscriptionContractManager.getUsageForPeriod`
 
 ## Signature Verification
 

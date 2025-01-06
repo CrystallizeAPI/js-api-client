@@ -27,7 +27,12 @@ import { createClient } from './core/client.js';
 import { createNavigationFetcher } from './core/navigation.js';
 import { createProductHydrater } from './core/hydrate.js';
 
-import { createOrderPusher, createOrderPaymentUpdater, createOrderFetcher } from './core/order.js';
+import {
+    createOrderPusher,
+    createOrderPaymentUpdater,
+    createOrderFetcher,
+    createOrderPipelineStageSetter,
+} from './core/order.js';
 import { createCatalogueFetcher } from './core/catalogue.js';
 import { createSearcher } from './core/search.js';
 import { createSubscriptionContractManager } from './core/subscription.js';
@@ -50,6 +55,7 @@ export const CrystallizeHydraterBySkus = productHydrator.bySkus;
 
 export const CrystallizeOrderPusher = createOrderPusher(CrystallizeClient);
 export const CrystallizeCreateOrderPaymentUpdater = createOrderPaymentUpdater(CrystallizeClient);
+export const CrystallizeCreateOrderPipelineStageSetter = createOrderPipelineStageSetter(CrystallizeClient);
 
 export const CrystallizeCatalogueFetcher = createCatalogueFetcher(CrystallizeClient);
 export const CrystallizeSearcher = createSearcher(CrystallizeClient);

@@ -53,6 +53,7 @@ export type ApiCaller<T> = (query: string, variables?: VariablesType) => Promise
 
 export type ClientInterface = {
     catalogueApi: ApiCaller<any>;
+    discoveryApi: ApiCaller<any>;
     searchApi: ApiCaller<any>;
     orderApi: ApiCaller<any>;
     subscriptionApi: ApiCaller<any>;
@@ -360,6 +361,12 @@ export function createClient(configuration: ClientConfiguration, options?: Creat
         accessTokenSecret: configuration.accessTokenSecret,
     };
 
+    // nothing expect static auth token
+    const discoveryConfig: ClientConfiguration = {
+        ...commonConfig,
+        staticAuthToken: configuration.staticAuthToken,
+    };
+
     // sessionId and static auth token are excluded
     const tokenOnlyConfig: ClientConfiguration = {
         ...commonConfig,
@@ -369,6 +376,12 @@ export function createClient(configuration: ClientConfiguration, options?: Creat
 
     return {
         catalogueApi: createApiCaller(grab, apiHost(configuration)([identifier, 'catalogue']), catalogConfig, options),
+        discoveryApi: createApiCaller(
+            grab,
+            apiHost(configuration)([identifier, 'discovery']),
+            discoveryConfig,
+            options,
+        ),
         searchApi: createApiCaller(grab, apiHost(configuration)([identifier, 'search']), catalogConfig, options),
         orderApi: createApiCaller(grab, apiHost(configuration)([identifier, 'orders']), tokenOnlyConfig, options),
         subscriptionApi: createApiCaller(

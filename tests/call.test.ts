@@ -102,6 +102,31 @@ test('callSearchApi: Raw fetch Skus', async () => {
     expect(response.search.edges[0].node.path).toBe('/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood');
 });
 
+test('callDiscoApi: Raw fetch ', async () => {
+    const CrystallizeClient = createClient({
+        tenantIdentifier: 'furnitut',
+    });
+
+    const caller = CrystallizeClient.discoveryApi;
+
+    const query = `query { 
+        browse {
+            product(
+                path:"/products/coffee/guadalupe-collective"      
+            ) {
+                hits {
+                    path
+                    name
+                    description
+                }
+            }
+        }
+    }`;
+    const response = await caller(query);
+
+    expect(response.browse.product.hits[0].path).toBe('/products/coffee/guadalupe-collective');
+});
+
 test.skip('Shop API Cart: Test we can call it', async () => {
     const CrystallizeClient = createClient(
         {
