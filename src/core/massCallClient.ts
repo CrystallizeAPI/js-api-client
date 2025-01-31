@@ -36,7 +36,12 @@ export type MassClientInterface = ClientInterface & {
     };
 };
 
-const createFibonnaciSleeper = () => {
+export type Sleeper = {
+    wait: () => Promise<void>;
+    reset: () => void;
+};
+
+const createFibonnaciSleeper = (): Sleeper => {
     let fibonnaciA = 0,
         fibonnaciB = 1;
     const sleep = (s: number) => new Promise((r) => setTimeout(r, s * 1000));
@@ -79,6 +84,11 @@ export function createMassCallClient(
             exception: any,
             promise: CrystallizePromise<any>,
         ) => Promise<boolean>;
+        sleeper?: Sleeper;
+        changeIncrementFor?: (
+            situaion: 'more-than-half-have-failed' | 'some-have-failed' | 'none-have-failed',
+            currentIncrement: number,
+        ) => number;
     },
 ): MassClientInterface {
     let promises: CrystallizePromise<any>[] = [];
@@ -86,7 +96,7 @@ export function createMassCallClient(
     let seek = 0;
     const maxConcurrent = options.maxSpawn ?? 5;
     let increment = options.initialSpawn ?? 1;
-    const sleeper = createFibonnaciSleeper();
+    const sleeper = options.sleeper ?? createFibonnaciSleeper();
 
     const execute = async () => {
         failedPromises = [];
@@ -159,13 +169,19 @@ export function createMassCallClient(
 
             if (batchErrorCount > Math.floor(batch.length / 2)) {
                 // if we have more than 50% of error we restart from 1 by 1
-                increment = 1;
+                increment = options.changeIncrementFor
+                    ? options.changeIncrementFor('more-than-half-have-failed', increment)
+                    : 1;
             } else if (batchErrorCount > 0 && increment > 1) {
                 // if that's under 50%, we reduce
-                increment--;
+                increment = options.changeIncrementFor
+                    ? options.changeIncrementFor('some-have-failed', increment)
+                    : increment - 1;
             } else if (batchErrorCount === 0 && increment < maxConcurrent) {
                 // if no error, then we increment +1
-                increment++;
+                increment = options.changeIncrementFor
+                    ? options.changeIncrementFor('none-have-failed', increment)
+                    : increment + 1;
             }
         } while (batch.length > 0 && seek < promises.length);
         return results;
