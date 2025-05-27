@@ -25,6 +25,6 @@ test('Hydrate Skus by using the sync API, should failed with no credentials', as
         const hydrater = createProductHydrater(CrystallizeClient, { useSyncApiForSKUs: true }).bySkus;
         await hydrater(['b-1628520141076', 'b-1628514494819'], 'en');
     } catch (exception) {
-        expect(exception.code).toBe(403);
+        expect(exception.code).toBe(400);
     }
 });

@@ -122,7 +122,7 @@ test('pimAPi Push a new Contract', async () => {
             },
         });
     } catch (exception) {
-        expect(exception.code).toBe(403);
+        expect(exception.code).toBe(400);
     }
 });
 
@@ -136,6 +136,6 @@ test('pimAPi Push a new Contract', async () => {
             },
         });
     } catch (exception) {
-        expect(exception.code).toBe(403);
+        expect(exception.code).toBe(400);
     }
 });

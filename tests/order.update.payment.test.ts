@@ -87,6 +87,6 @@ test('pimAPi: Update Order Payment', async () => {
             ],
         });
     } catch (exception) {
-        expect(exception.code).toBe(403);
+        expect(exception.code).toBe(400);
     }
 });

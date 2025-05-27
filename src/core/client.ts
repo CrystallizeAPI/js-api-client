@@ -8,6 +8,7 @@ export type ClientConfiguration = {
     staticAuthToken?: string;
     sessionId?: string;
     shopApiToken?: string;
+    shopApiStaging?: boolean;
     origin?: string;
 };
 
@@ -173,8 +174,12 @@ async function post<T>(
 
 function apiHost(configuration: ClientConfiguration) {
     const origin = configuration.origin || '.crystallize.com';
-    return (path: string[], prefix: 'api' | 'pim' | 'shop-api' = 'api') =>
-        `https://${prefix}${origin}/${path.join('/')}`;
+    return (path: string[], prefix: 'api' | 'pim' | 'shop-api' = 'api') => {
+        if (configuration.shopApiStaging && prefix === 'shop-api') {
+            return `https://shop-api-staging.crystallize-edge.workers.dev/${path.join('/')}`;
+        }
+        return `https://${prefix}${origin}/${path.join('/')}`;
+    };
 }
 
 function createApiCaller(
