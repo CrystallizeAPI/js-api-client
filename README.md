@@ -1,621 +1,376 @@
 # JS API Client
 
-This library provides simplifications and helpers to easily fetch data from your tenant.
+Helpers and typed utilities for working with the Crystallize APIs.
 
-## Description
-
-So far, the available helpers are:
-
--   Client to query or mutate data from Crystallize
--   Mass Call Client that relies on the Client for mass operations
--   Catalogue Fetcher
--   Searcher
--   Order
-    -   Payment Updater
-    -   Pusher
-    -   Pipeline Stage Setter
--   Product Hydrater
-    -   Paths
-    -   Skus
--   Navigation Fetcher
--   Topics
--   Folders
--   CustomerManager
--   Subscription Contract Manager
--   Signature Verification
--   Profiling the requests
+> v5 is a major revamp: simpler client, typed inputs via @crystallize/schema, and focused managers for common tasks (catalogue, navigation, hydration, orders, customers, subscriptions, and cart).
 
 ## Installation
 
-With NPM:
-
 ```bash
+pnpm add @crystallize/js-api-client
+# or
 npm install @crystallize/js-api-client
-```
-
-With Yarn:
-
-```bash
+# or
 yarn add @crystallize/js-api-client
 ```
 
-## Simple Client
+## Quick start
 
-This is a simple client to communicate with the Crystallize APIs.
-
-You get access to different helpers for each API:
-
--   catalogueApi
--   searchApi
--   orderApi
--   subscriptionApi
--   pimApi
--   pimNextApi
--   shopCartApi
-
-First, you need to create the _Client:_
-
-```javascript
+```typescript
 import { createClient } from '@crystallize/js-api-client';
 
-export const CrystallizeClient = createClient({
+const api = createClient({
     tenantIdentifier: 'furniture',
+    // For protected APIs, provide credentials
+    // accessTokenId: '…',
+    // accessTokenSecret: '…',
+    // staticAuthToken: '…',
+    // and more
 });
+
+// Call any GraphQL you already have (string query + variables)
+const { catalogue } = await api.catalogueApi(
+    `query Q($path: String!, $language: String!) {
+    catalogue(path: $path, language: $language) { name path }
+}`,
+    { path: '/shop', language: 'en' },
+);
+
+// Don't forget to close when using HTTP/2 option (see below)
+api.close();
 ```
 
-Then you can use it:
+## Quick summary
+
+- One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `shopCartApi`
+- High-level helpers: `createCatalogueFetcher`, `createNavigationFetcher`, `createProductHydrater`, `createOrderFetcher`, `createOrderManager`, `createCustomerManager`, `createCustomerGroupManager`, `createSubscriptionContractManager`, `createCartManager`
+- Utilities: `createSignatureVerifier`, `createBinaryFileManager`, `pricesForUsageOnTier`, request `profiling`
+- Build GraphQL with objects using `json-to-graphql-query` (see section below)
+- Strong typing via `@crystallize/schema` inputs and outputs
+- Upgrading? See [UPGRADE.md](UPGRADE.md) for v4 → v5 migration
+
+## Options and environment
+
+`createClient(configuration, options?)`
+
+- configuration
+    - `tenantIdentifier` (required)
+    - `tenantId` optional
+    - `accessTokenId` / `accessTokenSecret` or `sessionId`
+    - `staticAuthToken` for read-only catalogue/discovery
+    - `shopApiToken` optional; otherwise auto-fetched
+    - `shopApiStaging` to use the staging Shop API
+    - `origin` custom host suffix (defaults to `.crystallize.com`)
+- options
+    - `useHttp2` enable HTTP/2 transport
+    - `profiling` callbacks
+    - `extraHeaders` extra request headers for all calls
+    - `shopApiToken` controls auto-fetch: `{ doNotFetch?: boolean; scopes?: string[]; expiresIn?: number }`
+
+`client.close()` should be called when you enable HTTP/2 to gracefully close the underlying session.
+
+### Available API callers
+
+- `catalogueApi` – Catalogue GraphQL
+- `discoveryApi` – Discovery GraphQL (replaces the old Search API)
+- `pimApi` – PIM GraphQL (classic /graphql soon legacy)
+- `nextPimApi` – PIM Next GraphQL (scoped to tenant)
+- `shopCartApi` – Shop Cart GraphQL (token handled for you)
+
+All callers share the same signature: `<T>(query: string, variables?: Record<string, unknown>) => Promise<T>`.
+
+### Authentication overview
+
+Pass the relevant credentials to `createClient`:
+
+- `staticAuthToken` for catalogue/discovery read-only
+- `accessTokenId` + `accessTokenSecret` (or `sessionId`) for PIM/Shop operations
+- `shopApiToken` optional; if omitted, a token will be fetched using your PIM credentials on first cart call
+
+See the official docs for auth: https://crystallize.com/learn/developer-guides/api-overview/authentication
+
+## Profiling requests
+
+Log queries, timings and server timing if available.
 
 ```typescript
-export async function fetchSomething(): Promise<Something[]> {
-    const response = await CrystallizeClient.catalogueApi(graphQLQuery, variables);
-    return response.catalogue;
-}
-```
+import { createClient } from '@crystallize/js-api-client';
 
-There is a live demo: https://crystallizeapi.github.io/libraries/js-api-client/call-api
-
-When it comes to APIs that require [authentication](https://crystallize.com/learn/developer-guides/api-overview/authentication), you can provide more to _createClient_.
-
-```javascript
-const pimApiClient = createClient({
-    tenantIdentifier: 'furniture',
-    accessTokenId: 'xxx',
-    accessTokenSecret: 'xxx',
-};
-await pimApiClient.pimApi(query)
-
-const catalogueApiClient = createClient({
-    tenantIdentifier: 'furniture',
-    staticAuthToken: 'xxx'
-};
-await catalogueApiClient.catalogueApi(query)
-```
-
-There is even more about the [Shop Cart API](https://crystallize.com/learn/developer-guides/shop-api) that requires a specific token. If you've already fetched the token yourself, you can pass it directly:
-
-```javascript
-const cartApiClient = createClient({
-    tenantIdentifier: 'furniture',
-    shopApiToken: 'xxx',
-});
-await cartApiClient.shopCartApi(query);
-```
-
-Or, you can let the JS API Client do the heavy-lifting for you. The Shop Cart API requires proof of access to the PIM API in order to get such a token. Based on your situation, you're most likely using the Shop Cart API server-side:
-
-```javascript
-const cartApiClient = createClient(
-    {
-        tenantIdentifier: 'furniture',
-        accessTokenId: 'xxx',
-        accessTokenSecret: 'xxx',
-    },
-    {
-        // optional
-        shopApiToken: {
-            expiresIn: 900000, // optional, default 12 hours
-            scopes: ['cart', 'cart:admin', 'usage'], // optional, default ['cart']
-        },
-    },
-);
-await cartApiClient.shopCartApi(query);
-```
-
-The JS API Client will grab the token for you (once) and use it within subsequent calls to the Shop Cart API.
-
-## Catalogue Fetcher
-
-You can pass objects that respect the logic of https://www.npmjs.com/package/json-to-graphql-query to the Client.
-
-And because we can use plain simple objects, it means we can provide you a query builder.
-
-The goal is to help you build queries that are more than “strings”:
-
-```javascript
-const builder = catalogueFetcherGraphqlBuilder;
-await CrystallizeCatalogueFetcher(query, variables);
-```
-
-Example Query 1:
-
-```javascript
-{
-    catalogue: {
-        children: {
-            __on: [
-                builder.onItem({
-                    ...builder.onComponent('test', 'RichText', {
-                        json: true,
-                    }),
-                }),
-                builder.onProduct({
-                    defaultVariant: {
-                        firstImage: {
-                            url: true,
-                        },
-                    },
-                }),
-                builder.onDocument(),
-                builder.onFolder(),
-            ],
-        },
-    },
-}
-```
-
-Example Query 2:
-
-```javascript
-{
-    catalogue: {
-        ...builder.onComponent('grid', 'GridRelations', {
-            grids: {
-                rows: {
-                    columns: {
-                        layout: {
-                            rowspan: true,
-                            colspan: true,
-                        },
-                        item: {
-                            __on: [
-                                builder.onProduct(
-                                    {
-                                        name: true,
-                                    },
-                                    {
-                                        onVariant: {
-                                            images: {
-                                                url: true,
-                                            },
-                                            price: true,
-                                        },
-                                    },
-                                ),
-                            ],
-                        },
-                    },
-                },
-            },
-        }),
-    },
-}
-```
-
-The best way to learn how use the Fetcher is to [check the builder itself](https://github.com/CrystallizeAPI/libraries/blob/main/components/js-api-client/src/core/catalogue.ts#L20).
-
-## Navigation Fetcher
-
-In Crystallize, your Items or Topics are organized like a tree or graph, i.e. hierarchically. It's very common that you will want to build the navigation of your website following the Content Tree or the Topic Tree.
-
-These fetchers do the heavy lifting for you. Behind the scenes, they will build a recursive GraphQL query for you.
-
-There are 2 helpers for it that you get via createNavigationFetcher. You get an object with `byFolders` or `byTopics` that are functions. The function signatures are:
-
-```typescript
-function fetch(path:string, language:string, depth:number, extraQuery: any, (level:number) => any);
-```
-
-Note: These helpers use the children property and are therefore not paginated. You have to take this into account.
-
-Example of Usage:
-
-```javascript
-const response = await CrystallizeNavigationFetcher('/', 'en', 3).byFolders;
-const response = await CrystallizeNavigationFetcher('/', 'en', 2).byTopics;
-```
-
-### To go even further
-
-You might want to return more information from that function by extending the GraphQL query that is generated for you. You can do that thanks to the last parameters.
-
-Those last parameters MUST return an object that respects the logic of https://www.npmjs.com/package/json-to-graphql-query
-
-Example:
-
-```javascript
-const fetch = createNavigationFetcher(CrystallizeClient).byFolders;
-const response = await fetch(
-    '/',
-    'en',
-    3,
-    {
-        tenant: {
-            __args: {
-                language: 'en',
-            },
-            name: true,
-        },
-    },
-    (level) => {
-        switch (level) {
-            case 0:
-                return {
-                    shape: {
-                        identifier: true,
-                    },
-                };
-            case 1:
-                return {
-                    createdAt: true,
-                };
-            default:
-                return {};
-        }
-    },
-);
-```
-
-Here you will get not only the navigation but also the tenant name, the shape identifier for items of _depth=1_, and the creation date for items of _depth=2_.
-
-## Product Hydrater
-
-Usually in the context of the Cart/Basket, you might want to keep the SKUs and/or the paths of the Variants in the basket locally and ask Crystallize to hydrate the data at some point.
-
-There are 2 helpers that you get via _createProductHydrater_. You get an object with `byPaths` or `bySkus` that are functions. The function signatures are:
-
-```typescript
-function hydrater(
-    items: string[],
-    language: string,
-    extraQuery: any,
-    perProduct: (item: string, index: number) => any,
-    perVariant: (item: string, index: number) => any,
-);
-```
-
-When called, both return an array of products based on the strings in the arguments (paths or SKUs) you provided.
-
-Note: when you hydrate by SKU, the helper fetches the paths from the Search API.
-
-There is a live demo for both:
-
--   https://crystallizeapi.github.io/libraries/js-api-client/hydrater/by/paths
--   https://crystallizeapi.github.io/libraries/js-api-client/hydrater/by/skus
-
-### To go even further
-
-You might want to return more information from that function by extending the GraphQL query that is generated for you. You can do that thanks to the last parameters.
-
-Those last parameters MUST return an object that respects the logic of https://www.npmjs.com/package/json-to-graphql-query
-
-Example:
-
-```javascript
-const CrystallizeClient = createClient({
-    tenantIdentifier: 'furniture',
-});
-const hydrater = createProductHydrater(CrystallizeClient).byPaths;
-const response = await hydrater(
-    [
-        '/shop/bathroom-fitting/large-mounted-cabinet-in-treated-wood',
-        '/shop/bathroom-fitting/mounted-bathroom-counter-with-shelf',
-    ],
-    'en',
-    {
-        tenant: {
-            id: true,
-        },
-        perVariant: {
-            id: true,
-        },
-        perProduct: {
-            firstImage: {
-                variants: {
-                    url: true,
-                },
-            },
-        },
-    },
-);
-```
-
-With this code, you get the _Products_, the current tenant id, the _id_ for each Variant, and for each product the URL of the first transcoded product Image.
-
-## Order Fetcher
-
-It is also very common to fetch an Order from Crystallize. It usually requires [authentication](https://crystallize.com/learn/developer-guides/api-overview/authentication), and this helper is probably more suitable for your Service API. This fetcher does the heavy lifting to simplify fetching orders.
-
-There are 2 helpers that you get via _createOrderFetcher_. You get an object with `byId` or `byCustomerIdentifier` that are functions.
-
--   **byId**: takes an _orderId_ in argument and fetches the related Order for you.
--   **byCustomerIdentifier**: takes a _customerIdentifier_ and fetches all the Orders (with pagination) of that customer.
-
-Function signatures respectively are:
-
-```typescript
-function byId(orderId: string, onCustomer?: any, onOrderItem?: any, extraQuery?: any);
-function byId(customerIdentifier: string, extraQueryArgs?: any, onCustomer?: any, onOrderItem?: any, extraQuery?: any);
-```
-
-### To go even further
-
-You might want to return more information from that function by extending the GraphQL query that is generated for you. You can do that thanks to the last parameters.
-
-## Order Pusher
-
-You can use the *CrystallizeOrderPusher* to push an order to Crystallize. This helper will validate the order and throw an exception if the input is incorrect. Also, all the Types (and the Zod JS types) are exported so you can work more efficiently.
-
-```javascript
-const caller = CrystallizeOrderPusher;
-await caller({
-    customer: {
-        firstName: 'William',
-        lastName: 'Wallace',
-    },
-    cart: [
-        {
-            sku: '123',
-            name: 'Bamboo Chair',
-            quantity: 3,
-        },
-    ],
-});
-```
-
-This is the minimum to create an Order. Of course, the Order can be much more complex.
-
-## Order Payment Updater
-
-You can use the *CrystallizeCreateOrderPaymentUpdater* to update an order with payment information in Crystallize. This helper will validate the payment and throw an exception if the input is incorrect. And all the Types (and Zod JS types) are exported so you can work more efficiently.
-
-```javascript
-const caller = CrystallizeCreateOrderPaymentUpdater;
-const result = await caller('xXxYyYZzZ', {
-    payment: [
-        {
-            provider: 'custom',
-            custom: {
-                properties: [
-                    {
-                        property: 'payment_method',
-                        value: 'Crystal Coin',
-                    },
-                    {
-                        property: 'amount',
-                        value: '112358',
-                    },
-                ],
-            },
-        },
-    ],
-});
-```
-
-## Order Pipeline Stage Setter
-
-You can use the *CrystallizeCreateOrderPipelineStageSetter* to put an order into a specific pipeline stage.
-
-```javascript
-const caller = CrystallizeCreateOrderPipelineStageSetter;
-const result = await caller(orderId, pipelineId, stageId);
-```
-
-## Searcher
-
-You can use the *CrystallizeSearcher* to search through the Search API in a more sophisticated way.
-
-The JS API Client exposes a type _CatalogueSearchFilter_ and a type _catalogueSearchOrderBy_ that you can use in combination with other parameters to experience a better search.
-
-The _search_ function is a generator that allows you to seamlessly loop into the results while the lib is taking care of pagination.
-
-```javascript
-const CrystallizeClient = createClient({
-    tenantIdentifier: 'furniture',
-});
-
-//note: you can use the catalogueFetcherGraphqlBuilder
-const nodeQuery = {
-    name: true,
-    path: true,
-};
-const filter = {
-    type: 'PRODUCT',
-};
-const orderBy = undefined;
-const pageInfo = {
-    /* customize here if needed */
-};
-
-for await (const item of createSearcher(CrystallizeClient).search('en', nodeQuery, filter, orderBy, pageInfo, {
-    total: 15,
-    perPage: 5,
-})) {
-    console.log(item); // what you have passed to nodeQuery
-}
-```
-
-## Customer Manager
-
-This manages the creation and updating of Customers in Crystallize.
-
-This is just a simple wrapper using a Schema to validate the input before calling the API for you.
-
-Example of creation:
-
-```javascript
-const intent: CreateCustomerInputRequest = valideCustomerObject;
-await CrystallizeCustomerManager.create({
-    ...intent,
-    meta: [
-        {
-            key: 'type',
-            value: 'particle',
-        },
-    ],
-});
-```
-
-Example of update:
-
-```javascript
-const intent: UpdateCustomerInputRequest = {
-    ...rest,
-    meta: [
-        {
-            key: 'type',
-            value: 'crystal',
-        },
-    ],
-};
-await CrystallizeCustomerManager.update(identifier, intent);
-```
-
-## Subscription Contract Manager
-
-The Crystallize Subscription system is really powerful. The [documentation](https://crystallize.com/learn/concepts/subscription) is clear, so you know that to create a Subscription Contract based on a Product Variant that has a Plan, you need:
-
--   the **Product**: what are we buying
--   the **ProductVariant**: the real thing we are actually buying
--   the **Subscription Plan**: it may exist different kind of Plan on a Variant. Plans include the Metered Variables, etc.
--   the **Period**: Monthly? Yearly?
--   the **PriceVariantIdentifier**: USD? EUR?
--   the **language** as Crystallize is fully multilingual.
-
-That’s the information you can retrieve from the Catalogue, the information that your buyer would put in his/her cart.
-
-When the time comes, you will need to create a Subscription Contract.
-
-From the documentation:
-
-```
-Creating Subscription Contracts
-Once you’ve got a valid customer, created a subscription plan, and added the subscription plan to a product variant as needed, you’re ready to create a subscription contract. You can design the flow that you want, but usually, it’d be very close to what you would do on paper. First, you create a contract with your customer (subscription contract) that sets up the rules (price, metered variables, etc.), including the payment information (payment field) and the different subscription periods (initial and recurring). After the contract is created comes the payment, prepaid or paid after. Finally, there will be an order in Crystallize with the subscription contract ID and a subscription OrderItem to describe what this charge is for.
-```
-
-The same way you can create an Order with your own price (discounts, B2B pricing etc.), the Subscription Contract can have specific prices that are completely customized to the buyer.
-
-Wouldn’t it be nice to get a Subscription Contract Template (based on buyer decision) that you could just tweak?
-
-That’s one of the methods of the Subscription Contract Manager:
-
-```javascript
-CrystallizeSubscriptionContractManager.createSubscriptionContractTemplateBasedOnVariantIdentity(
-    productPath,
-    { sku: variantSku },
-    planIdentifier,
-    periodId,
-    priceVariantIdentifier,
-    'en',
-);
-```
-
-This will return a Subscription Contract that you can alter in order to save it to Crystallize:
-
-```javascript
-const data = await CrystallizeSubscriptionContractManager.create({
-    ...tweakedContract,
-    customerIdentifier: customerIdentifier,
-    item: productItem,
-    // custom stuff
-});
-```
-
-An Update method exists as well:
-
-```javascript
-await CrystallizeSubscriptionContractManager.update(contractId, cleanUpdateContract);
-```
-
-There is also 3 other helpers that you will most likely use and that work the same as Order Fetcher:
-
--   `CrystallizeSubscriptionContractManager.fetchById`,
--   `CrystallizeSubscriptionContractManager.fetchByCustomerIdentifier`,
--   `CrystallizeSubscriptionContractManager.getCurrentPhase`,
--   `CrystallizeSubscriptionContractManager.getUsageForPeriod`
-
-## Signature Verification
-
-The full documentation is here https://crystallize.com/learn/developer-guides/api-overview/signature-verification
-This library makes it simple, assuming:
-
--   you have your `CRYSTALLIZE_SIGNATURE_SECRET` from the environment variable
--   you retrieve the Signature from the Header in `signatureJwt`
-
-you can use the `createSignatureVerifier` OR `createAsyncSignatureVerifier` based on your preferences/libs you are using to verify and/or hash
-
-```javascript
-const guard = createSignatureVerifier({
-    secret: `${process.env.CRYSTALLIZE_SIGNATURE_SECRET}`,
-    sha256: (data: string) => crypto.createHash('sha256').update(data).digest('hex'),
-    jwtVerify: (token: string, secret: string) => jwt.verify(token, secret) as CrystallizeSignature,
-});
-
-guard(signatureJwt, {
-    url: request.url, // full URL here, including https://  etc. request.href in some framework
-    method: 'POST',
-    body: 'THE RAW JSON BODY', // the library parse it for you cf. doc
-});
-```
-
-If the signature is not valid:
-
--   JWT signature is not verified
--   HMAC is invalid (man in the middle)
-
-The guard function will trigger an exception.
-
-> We let you provide the `sha256` and `jwtVerify` methods to stay agnostic of any library.
-
-### Handling Signature with HTTP GET and Webhook
-
-When using Webhook you may select GET as a HTTP Method. Even if you don't provide any GraphQL query Crystallize is going to call your endpoint with new parameters, in this case you need to provide an extra parameter to the `guard` function.
-
-```javascript
-guard(signatureJwt, {
-    url: request.url, // full URL here, including https://  etc. request.href in some framework
-    webhookUrl: 'https://webhook.site/xxx', // the URL you have setup in the Webhook
-    method: 'GET',
-}),
-```
-
-Using that will instruct the JS API Client to extract URL Parameter and use it as a payload to verify the HMAC.
-
-## Profiling the request
-
-There is time when you want to log and see the raw queries sent to Crystallize and also the timings.
-
-```javascript
-const apiClient = createClient(
-    {
-        tenantIdentifier: 'furniture',
-    },
+const api = createClient(
+    { tenantIdentifier: 'furniture' },
     {
         profiling: {
-            onRequest: (query, variables) => {
-                // do something with it
-                console.log(query, variables);
-            },
-            onRequestResolved: ({ resolutionTimeMs, serverTimeMs }, query, variables) => {
-                // do something with it
-                console.log(processingTimeMs, query, variables);
-            },
+            onRequest: (q) => console.debug('[CRYSTALLIZE] >', q),
+            onRequestResolved: ({ resolutionTimeMs, serverTimeMs }, q) =>
+                console.debug('[CRYSTALLIZE] <', resolutionTimeMs, 'ms (server', serverTimeMs, 'ms)'),
         },
     },
 );
 ```
 
-The queries that you get passed on those functions are strings. Computed query from JS Object used by Fetcher, Hydrater and so on.
-It's really handy for debugging and development.
+## GraphQL builder: json-to-graphql-query
+
+This library embraces the awesome [json-to-graphql-query](https://www.npmjs.com/package/json-to-graphql-query) under the hood so you can build GraphQL queries using plain JS objects. Most helpers accept an object and transform it into a GraphQL string for you.
+
+- You can still call the low-level callers with raw strings.
+- For catalogue-related helpers, we expose `catalogueFetcherGraphqlBuilder` to compose reusable fragments.
+
+Example object → query string:
+
+```typescript
+import { jsonToGraphQLQuery } from 'json-to-graphql-query';
+
+const query = jsonToGraphQLQuery({
+    query: {
+        catalogue: {
+            __args: { path: '/shop', language: 'en' },
+            name: true,
+            path: true,
+        },
+    },
+});
+```
+
+## High-level helpers
+
+These helpers build queries, validate inputs using `@crystallize/schema`, and call the correct API for you.
+
+### Catalogue Fetcher
+
+```typescript
+import { createCatalogueFetcher, catalogueFetcherGraphqlBuilder as b } from '@crystallize/js-api-client';
+
+const fetchCatalogue = createCatalogueFetcher(api);
+
+const data = await fetchCatalogue<{ catalogue: { name: string; path: string } }>({
+    catalogue: {
+        __args: { path: '/shop', language: 'en' },
+        name: true,
+        path: true,
+        ...b.onProduct({}, { onVariant: { sku: true, name: true } }),
+    },
+});
+```
+
+### Navigation Fetcher
+
+```typescript
+import { createNavigationFetcher } from '@crystallize/js-api-client';
+
+const nav = createNavigationFetcher(api);
+const tree = await nav.byFolders('/', 'en', 3, /* extra root-level query */ undefined, (level) => {
+    if (level === 1) return { shape: { identifier: true } };
+    return {};
+});
+```
+
+### Product Hydrater
+
+Fetch product/variant data by paths or SKUs with optional price contexts.
+
+```typescript
+import { createProductHydrater } from '@crystallize/js-api-client';
+
+const hydrater = createProductHydrater(api, {
+    marketIdentifiers: ['eu'],
+    priceList: 'b2b',
+    priceForEveryone: true,
+});
+
+const products = await hydrater.bySkus(
+    ['SKU-1', 'SKU-2'],
+    'en',
+    /* extraQuery */ undefined,
+    (sku) => ({ vatType: { name: true, percent: true } }),
+    () => ({ priceVariants: { identifier: true, price: true } }),
+);
+```
+
+### Order Fetcher
+
+```typescript
+import { createOrderFetcher } from '@crystallize/js-api-client';
+
+const orders = createOrderFetcher(api);
+const order = await orders.byId('order-id', {
+    onOrder: { payment: { provider: true } },
+    onOrderItem: { subscription: { status: true } },
+    onCustomer: { email: true },
+});
+
+const list = await orders.byCustomerIdentifier('customer-123', { first: 20 });
+```
+
+Typed example (TypeScript generics):
+
+```typescript
+type OrderExtras = { payment: { provider: string }[] };
+type OrderItemExtras = { subscription?: { status?: string } };
+type CustomerExtras = { email?: string };
+
+const typedOrder = await orders.byId<OrderExtras, OrderItemExtras, CustomerExtras>('order-id', {
+    onOrder: { payment: { provider: true } },
+    onOrderItem: { subscription: { status: true } },
+    onCustomer: { email: true },
+});
+
+typedOrder.payment; // typed as array with provider
+typedOrder.cart[0].subscription?.status; // typed
+typedOrder.customer.email; // typed
+```
+
+### Order Manager
+
+Create/update orders, set payments or move to pipeline stage. Inputs are validated against `@crystallize/schema`.
+
+```typescript
+import { createOrderManager } from '@crystallize/js-api-client';
+
+const om = createOrderManager(api);
+
+// Register (minimal example)
+const confirmation = await om.register({
+    cart: [{ sku: 'SKU-1', name: 'Product', quantity: 1, price: { gross: 100, net: 80, currency: 'USD' } }],
+    customer: { identifier: 'customer-123' },
+});
+
+// Update payments only
+await om.setPayments('order-id', [
+    {
+        provider: 'STRIPE',
+        amount: { gross: 100, net: 80, currency: 'USD' },
+        method: 'card',
+    },
+]);
+
+// Put in pipeline stage
+await om.putInPipelineStage({ id: 'order-id', pipelineId: 'pipeline', stageId: 'stage' });
+```
+
+### Customer and Customer Group Managers
+
+```typescript
+import { createCustomerManager, createCustomerGroupManager } from '@crystallize/js-api-client';
+
+const customers = createCustomerManager(api);
+await customers.create({ identifier: 'cust-1', email: 'john@doe.com' });
+await customers.update({ identifier: 'cust-1', firstName: 'John' });
+
+const groups = createCustomerGroupManager(api);
+await groups.create({ identifier: 'vip', name: 'VIP' });
+```
+
+### Subscription Contract Manager
+
+Create/update contracts and generate a pre-filled template from a variant.
+
+```typescript
+import { createSubscriptionContractManager } from '@crystallize/js-api-client';
+
+const scm = createSubscriptionContractManager(api);
+
+const template = await scm.createTemplateBasedOnVariantIdentity(
+    '/shop/my-product',
+    'SKU-1',
+    'plan-identifier',
+    'period-id',
+    'default',
+    'en',
+);
+
+// …tweak template and create
+const created = await scm.create({
+    customerIdentifier: 'customer-123',
+    tenantId: 'tenant-id',
+    payment: {
+        /* … */
+    },
+    ...template,
+});
+```
+
+### Cart Manager (Shop API)
+
+Token handling is automatic (unless you pass `shopApiToken` and set `shopApiToken.doNotFetch: true`).
+
+```typescript
+import { createCartManager } from '@crystallize/js-api-client';
+
+const cart = createCartManager(api);
+
+// Hydrate a cart from input
+const hydrated = await cart.hydrate({
+    language: 'en',
+    items: [{ sku: 'SKU-1', quantity: 1 }],
+});
+
+// Add/remove items and place the order
+await cart.addSkuItem(hydrated.id, { sku: 'SKU-2', quantity: 2 });
+await cart.setCustomer(hydrated.id, { identifier: 'customer-123', email: 'john@doe.com' });
+await cart.setMeta(hydrated.id, { merge: true, meta: [{ key: 'source', value: 'web' }] });
+await cart.place(hydrated.id);
+```
+
+## Signature verification (async)
+
+Use `createSignatureVerifier` to validate Crystallize signatures for webhooks or frontend calls. Provide your own `jwtVerify` and `sha256` implementations.
+
+```typescript
+import jwt from 'jsonwebtoken';
+import { createHmac } from 'crypto';
+import { createSignatureVerifier } from '@crystallize/js-api-client';
+
+const secret = process.env.CRYSTALLIZE_SIGNATURE_SECRET!;
+const verify = createSignatureVerifier({
+    secret,
+    jwtVerify: async (token, s) => jwt.verify(token, s) as any,
+    sha256: async (data) => createHmac('sha256', secret).update(data).digest('hex'),
+});
+
+// POST example
+await verify(signatureJwtFromHeader, {
+    url: request.url,
+    method: 'POST',
+    body: rawBodyString, // IMPORTANT: raw body
+});
+
+// GET webhook example (must pass the original webhook URL)
+await verify(signatureJwtFromHeader, {
+    url: request.url, // the received URL including query params
+    method: 'GET',
+    webhookUrl: 'https://example.com/api/webhook', // the configured webhook URL in Crystallize
+});
+```
+
+## Pricing utilities
+
+```typescript
+import { pricesForUsageOnTier } from '@crystallize/js-api-client';
+
+const usage = 1200;
+const total = pricesForUsageOnTier(
+    usage,
+    [
+        { threshold: 0, price: 0, currency: 'USD' },
+        { threshold: 1000, price: 0.02, currency: 'USD' },
+    ],
+    'graduated',
+);
+```
+
+## Binary file manager
+
+Upload files (like images) to your tenant via pre-signed requests. Server-side only.
+
+```typescript
+import { createBinaryFileManager } from '@crystallize/js-api-client';
+
+const files = createBinaryFileManager(api);
+const key = await files.uploadImage('/absolute/path/to/picture.jpg');
+// Use `key` in subsequent PIM mutations
+```
+
+[crystallizeobject]: crystallize_marketing|folder|625619f6615e162541535959
 
 ## Mass Call Client
 
@@ -623,18 +378,21 @@ Sometimes, when you have many calls to do, whether they are queries or mutations
 
 These are the main features:
 
--   Run *initialSpawn* requests asynchronously in a batch. *initialSpawn* is the size of the batch per default
--   If there are more than 50% errors in the batch, it saves the errors and continues with a batch size of 1
--   If there are less than 50% errors in the batch, it saves the errors and continues with a batch size of [batch size - 1]
--   If there are no errors, it increments (+1) the number of requests in a batch, capped to *maxSpawn*
--   If the error rate is 100%, it waits based on **Fibonnaci** increment
--   At the end of all batches, you can retry the failed requests
--   Optional lifecycle function *onBatchDone* (async)
--   Optional lifecycle function *onFailure* (sync) allowing you to do something and decide to let enqueue (return true: default) or return false and re-execute right away, or any other actions
--   Optional lifecycle function *beforeRequest* (sync) to execute before each request. You can return an altered request/promise
--   Optional lifecycle function *afterRequest* (sync) to execute after each request. You also get the result in there, if needed
+- Run *initialSpawn* requests asynchronously in a batch. *initialSpawn* is the size of the batch by default
+- If there are more than 50% errors in the batch, it saves the errors and continues with a batch size of 1
+- If there are less than 50% errors in the batch, it saves the errors and continues with the current batch size minus 1
+- If there are no errors, it increments (+1) the number of requests in a batch, capped to *maxSpawn*
+- If the error rate is 100%, it waits based on **Fibonacci** increment
+- At the end of all batches, you can retry the failed requests
+- Optional lifecycle function *onBatchDone* (async)
+- Optional lifecycle function *onFailure* (sync) allowing you to do something and decide to let enqueue (return true: default) or return false and re-execute right away, or any other actions
+- Optional lifecycle function *beforeRequest* (sync) to execute before each request. You can return an altered request/promise
+- Optional lifecycle function *afterRequest* (sync) to execute after each request. You also get the result in there, if needed
 
 ```javascript
+// import { createMassCallClient } from '@crystallize/js-api-client';
+const client = createMassCallClient(api, { initialSpawn: 1 }); // api created via createClient(...)
+
 async function run() {
     for (let i = 1; i <= 54; i++) {
         client.enqueue.catalogueApi(`query { catalogue { id, key${i}: name } }`);
@@ -653,22 +411,4 @@ async function run() {
 run();
 ```
 
-A full example is here: https://github.com/CrystallizeAPI/libraries/blob/main/components/js-api-client/src/examples/dump-tenant.ts
-
-## Image uploader
-
-Uploading an image to Crystallize is a three step process:
-
--   You first need to send a request to the PIM API to get a pre-signed URL to upload the file
--   Then, you send another request to upload the file and receive a key
--   Lastly, you can register the image in Crystallize using the key received in the previous step
-
-To simplify this process, there is a _handleImageUpload_ function provided with the library. Here is how you would use it:
-
-```javascript
-const image = await handleImageUpload(path, crystallizeClient, 'tenantID');
-```
-
-This takes care of the first two steps, which means you receive a key you can then use to register your image in Crystallize.
-
-[crystallizeobject]: crystallize_marketing|folder|625619f6615e162541535959
+Full example: https://github.com/CrystallizeAPI/libraries/blob/main/components/js-api-client/src/examples/dump-tenant.ts

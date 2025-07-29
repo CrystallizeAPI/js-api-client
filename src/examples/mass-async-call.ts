@@ -1,7 +1,12 @@
 // Usage: CRYSTALLIZE_TENANT_IDENTIFIER=furniture node dist/examples/massasynccall.js
 
-import { CrystallizeClient } from '../index.js';
-import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/massCallClient.js';
+const CrystallizeClient = createClient({
+    tenantIdentifier: process.env.CRYSTALLIZE_TENANT_IDENTIFIER || 'furniture',
+    accessTokenId: process.env.CRYSTALLIZE_ACCESS_TOKEN_ID,
+    accessTokenSecret: process.env.CRYSTALLIZE_ACCESS_TOKEN_SECRET,
+});
+import { createClient } from '../core/client/create-client.js';
+import { createMassCallClient, CrystallizePromise, MassCallClientBatch } from '../core/create-mass-call-client.js';
 
 // call of onBatchDone is not blocking. (no await done internally)
 const onBatchDone = async (batch: MassCallClientBatch): Promise<void> => {
@@ -12,11 +17,7 @@ const onBatchDone = async (batch: MassCallClientBatch): Promise<void> => {
 // Return:
 //     true: the failure is enqueued for retry (if called)
 //     false: the failure is not enqueued. You can retry it right away if you want.
-const onFailure = async (
-    batch: MassCallClientBatch,
-    exception: any,
-    promise: CrystallizePromise<any>,
-): Promise<boolean> => {
+const onFailure = async (batch: MassCallClientBatch, exception: any, promise: CrystallizePromise): Promise<boolean> => {
     console.log(`Failure in batch from ${batch.from} to ${batch.to}`);
     console.log([promise.query, promise.variables]);
     //console.log(exception);
@@ -26,17 +27,13 @@ const onFailure = async (
 // call of beforeRequest is blocking. (await is done before each request is done)
 const beforeRequest = async (
     batch: MassCallClientBatch,
-    promise: CrystallizePromise<any>,
-): Promise<CrystallizePromise<any> | void> => {
+    promise: CrystallizePromise,
+): Promise<CrystallizePromise | void> => {
     console.log(`Batch from ${batch.from} to ${batch.to} before request: ${promise.query}!`);
 };
 
 // call of afterRequest is blocking. (await is done after each request is finished)
-const afterRequest = async (
-    batch: MassCallClientBatch,
-    promise: CrystallizePromise<any>,
-    results: any,
-): Promise<void> => {
+const afterRequest = async (batch: MassCallClientBatch, promise: CrystallizePromise, results: any): Promise<void> => {
     console.log(`Batch from ${batch.from} to ${batch.to} after request: ${promise.query}!`);
     console.log(results);
 };
