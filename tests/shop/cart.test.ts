@@ -71,7 +71,7 @@ describe('Cart Tests', () => {
         await cartManager.fulfill(cart.id, order.id);
     });
 
-    test('Hydrate and abandon cart', async () => {
+    test('Hydrate and abandon a cart', async () => {
         const cartManager = createCartManager(CrystallizeClient);
 
         const cart = await cartManager.hydrate({
