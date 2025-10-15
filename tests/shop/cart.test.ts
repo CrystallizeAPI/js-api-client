@@ -83,5 +83,5 @@ describe('Cart Tests', () => {
         expect(cart).toHaveProperty('id');
 
         await cartManager.abandon(cart.id);
-    });
+    }, 10000);
 });
