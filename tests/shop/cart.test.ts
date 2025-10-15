@@ -1,18 +1,41 @@
 import { test, expect, describe, beforeAll } from 'vitest';
-import { ClientInterface, createCartManager, createOrderFetcher, createOrderManager } from '../../src';
+import { ClientInterface, createCartManager, createOrderManager } from '../../src';
 import { createApiClient } from '../util';
-import { AddressType, defaultCartContext } from '@crystallize/schema/shop';
+import { defaultCartContext, CustomerInput } from '@crystallize/schema/shop';
 
 describe('Cart Tests', () => {
     let CrystallizeClient: ClientInterface;
-    let cartId: string;
+    let customerIdentifier = 'test-customer';
+    const items = [
+        {
+            sku: 'bishop-marble-normal',
+            name: 'Bamboo Chair',
+            quantity: 2,
+        },
+    ];
+    const customer: CustomerInput = {
+        isGuest: true,
+        addresses: [
+            {
+                type: 'billing',
+                firstName: 'Test',
+                lastName: 'Customer',
+            },
+        ],
+        identifier: 'test-customer',
+        firstName: 'Test',
+        lastName: 'Customer',
+        type: 'individual',
+    };
 
     beforeAll(() => {
         CrystallizeClient = createApiClient();
     });
 
-    test('Hydrate a Cart', async () => {
+    test('Hydrate, place and fulfill a cart', async () => {
+        const orderManager = createOrderManager(CrystallizeClient);
         const cartManager = createCartManager(CrystallizeClient);
+
         const cart = await cartManager.hydrate<{
             customer: {
                 lastName: string;
@@ -20,26 +43,8 @@ describe('Cart Tests', () => {
         }>(
             {
                 context: defaultCartContext,
-                customer: {
-                    isGuest: true,
-                    addresses: [
-                        {
-                            type: 'billing',
-                            firstName: 'Test',
-                            lastName: 'Customer',
-                        },
-                    ],
-                    identifier: 'test-customer',
-                    firstName: 'Test',
-                    lastName: 'Customer',
-                    type: 'individual',
-                },
-                items: [
-                    {
-                        sku: 'bishop-marble-normal',
-                        quantity: 2,
-                    },
-                ],
+                customer,
+                items,
             },
             {
                 customer: {
@@ -52,5 +57,31 @@ describe('Cart Tests', () => {
         expect(cart).toHaveProperty('customer');
         expect(cart.customer).toHaveProperty('lastName');
         expect(cart.customer.lastName).toBe('Customer');
+
+        await cartManager.place(cart.id);
+
+        const order = await orderManager.register({
+            cart: items,
+            customer: {
+                identifier: customerIdentifier,
+                type: 'individual',
+            },
+        });
+
+        await cartManager.fulfill(cart.id, order.id);
+    });
+
+    test('Hydrate and abandon cart', async () => {
+        const cartManager = createCartManager(CrystallizeClient);
+
+        const cart = await cartManager.hydrate({
+            context: defaultCartContext,
+            customer,
+            items,
+        });
+
+        expect(cart).toHaveProperty('id');
+
+        await cartManager.abandon(cart.id);
     });
 });

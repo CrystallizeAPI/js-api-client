@@ -28,6 +28,35 @@ export const createCartManager = (apiClient: ClientInterface) => {
         return response.place;
     };
 
+    const abandon = async <OnCart, OC = unknown>(id: string, onCart?: OC) => {
+        const mutation = {
+            abandon: {
+                __args: {
+                    id,
+                },
+                id: true,
+                ...onCart,
+            },
+        };
+        const response = await apiClient.shopCartApi<{ abandon: WithId<OnCart> }>(jsonToGraphQLQuery({ mutation }));
+        return response.abandon;
+    };
+
+    const fulfill = async <OnCart, OC = unknown>(id: string, orderId: string, onCart?: OC) => {
+        const mutation = {
+            fulfill: {
+                __args: {
+                    id,
+                    orderId,
+                },
+                id: true,
+                ...onCart,
+            },
+        };
+        const response = await apiClient.shopCartApi<{ fulfill: WithId<OnCart> }>(jsonToGraphQLQuery({ mutation }));
+        return response.fulfill;
+    };
+
     const addSkuItem = async <OnCart, OC = unknown>(id: string, intent: CartSkuItemInput, onCart?: OC) => {
         const input = CartSkuItemInputSchema.parse(intent);
         const mutation = {
@@ -124,6 +153,8 @@ export const createCartManager = (apiClient: ClientInterface) => {
     return {
         hydrate,
         place,
+        fulfill,
+        abandon,
         addSkuItem,
         removeItem,
         setMeta,

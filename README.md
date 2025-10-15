@@ -304,11 +304,13 @@ const hydrated = await cart.hydrate({
     items: [{ sku: 'SKU-1', quantity: 1 }],
 });
 
-// Add/remove items and place the order
+// Add/remove items, abandon or place and fulfill the cart and assign the orderId
 await cart.addSkuItem(hydrated.id, { sku: 'SKU-2', quantity: 2 });
 await cart.setCustomer(hydrated.id, { identifier: 'customer-123', email: 'john@doe.com' });
 await cart.setMeta(hydrated.id, { merge: true, meta: [{ key: 'source', value: 'web' }] });
+await cart.abandon(hydrated.id);
 await cart.place(hydrated.id);
+await cart.fulfill(hydrated.id, orderId);
 ```
 
 ## Signature verification (async)
