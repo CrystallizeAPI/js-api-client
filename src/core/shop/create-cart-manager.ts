@@ -14,6 +14,20 @@ import { transformCartCustomerInput, transformCartInput } from './helpers.js';
 type WithId<R> = R & { id: string };
 
 export const createCartManager = (apiClient: ClientInterface) => {
+    const fetch = async <OnCart, OC = unknown>(id: string, onCart?: OC) => {
+        const query = {
+            cart: {
+                __args: {
+                    id,
+                },
+                id: true,
+                ...onCart,
+            },
+        };
+        const response = await apiClient.shopCartApi<{ cart: WithId<OnCart> }>(jsonToGraphQLQuery({ query }));
+        return response.cart;
+    };
+
     const place = async <OnCart, OC = unknown>(id: string, onCart?: OC) => {
         const mutation = {
             place: {
@@ -153,6 +167,7 @@ export const createCartManager = (apiClient: ClientInterface) => {
     return {
         hydrate,
         place,
+        fetch,
         fulfill,
         abandon,
         addSkuItem,

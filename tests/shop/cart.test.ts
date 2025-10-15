@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeAll } from 'vitest';
 import { ClientInterface, createCartManager, createOrderManager } from '../../src';
 import { createApiClient } from '../util';
-import { defaultCartContext, CustomerInput } from '@crystallize/schema/shop';
+import { defaultCartContext, CustomerInput, Cart } from '@crystallize/schema/shop';
 
 describe('Cart Tests', () => {
     let CrystallizeClient: ClientInterface;
@@ -69,6 +69,12 @@ describe('Cart Tests', () => {
         });
 
         await cartManager.fulfill(cart.id, order.id);
+
+        const fetchedCart = await cartManager.fetch<Cart>(cart.id, {
+            state: true,
+        });
+
+        expect(fetchedCart.state).toBe('ordered');
     }, 10000);
 
     test('Hydrate and abandon a cart', async () => {
