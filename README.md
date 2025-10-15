@@ -366,9 +366,13 @@ Upload files (like images) to your tenant via pre-signed requests. Server-side o
 import { createBinaryFileManager } from '@crystallize/js-api-client';
 
 const files = createBinaryFileManager(api);
-const key = await files.uploadImage('/absolute/path/to/picture.jpg');
-// Use `key` in subsequent PIM mutations
+const mediaKey = await files.uploadImage('/absolute/path/to/picture.jpg');
+const staticKey = await files.uploadFile('/absolute/path/to/static/file.pdf');
+const bulkKey = await files.uploadMassOperationFile('/absolute/path/to/import.zip');
+// Use the returned keys in subsequent PIM mutations
 ```
+
+`uploadImage` validates that the file is an image before creating a `MEDIA` upload. Use `uploadFile` for assets that should live in the tenant's static file storage, and `uploadMassOperationFile` for imports handled by the mass operations pipeline. Call `uploadToTenant` directly if you need lower-level control (e.g., custom buffers or upload types).
 
 [crystallizeobject]: crystallize_marketing|folder|625619f6615e162541535959
 

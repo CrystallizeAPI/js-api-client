@@ -2,47 +2,50 @@ import * as fs from 'fs';
 import * as mime from 'mime-lite';
 import { ClientInterface } from '../client/create-client.js';
 
-type ImageInputWithReferenceId = {
+type BinaryInputWithReferenceId = {
     filename: string;
     mimeType: string;
 };
 
-type UploadHandler = ImageInputWithReferenceId & {
+type BinaryHandler = BinaryInputWithReferenceId & {
     buffer: NonSharedBuffer;
+    type: 'MEDIA' | 'STATIC' | 'MASS_OPERATIONS';
 };
 
-const MUTATION_UPLOAD_FILE = `#graphql
-mutation UPLOAD_FILE ($filename: String!, $mimeType: String!) {
+const generatePresignedUploadRequest = `#graphql
+    mutation GET_URL($file: String!, $contentType: String!, $type: FileUploadType!) {
     generatePresignedUploadRequest(
-        filename: $filename
-        contentType: $mimeType
-        type: MEDIA
+        filename: $file
+        contentType: $contentType
+        type: $type
     ) {
         ... on PresignedUploadRequest {
-            url
-            fields {
-                name
-                value
-            }
+          url
+          fields {
+            name
+            value
+          }
+          maxSize
+          lifetime
         }
         ... on BasicError {
-            errorName
-            message
+          error: message
         }
     }
 }`;
 
 export const createBinaryFileManager = (apiClient: ClientInterface) => {
     // this function returns the key of the uploaded file
-    const uploadToTenant = async ({ mimeType, filename, buffer }: UploadHandler): Promise<string> => {
+    const uploadToTenant = async ({ type = 'MEDIA', mimeType, filename, buffer }: BinaryHandler): Promise<string> => {
         const signedRequestResult = await apiClient.nextPimApi<{
             generatePresignedUploadRequest: {
                 url: string;
                 fields: Array<{ name: string; value: string }>;
             };
-        }>(MUTATION_UPLOAD_FILE, {
-            filename,
-            mimeType,
+        }>(generatePresignedUploadRequest, {
+            file: filename,
+            contentType: mimeType,
+            type: type || 'MEDIA',
         });
 
         const payload = signedRequestResult.generatePresignedUploadRequest;
@@ -67,28 +70,68 @@ export const createBinaryFileManager = (apiClient: ClientInterface) => {
         return formData.get('key') as string;
     };
 
-    const uploadImage = async (imagePath: string): Promise<string> => {
-        const extension = imagePath.split('.').pop() as string;
+    const uploadImage = async (path: string): Promise<string> => {
+        const extension = path.split('.').pop() as string;
         const mimeType = mime.getType(extension);
-        const filename = imagePath.split('T/').pop() as string;
+        const filename = path.split('/').pop() as string;
         if (!mimeType) {
-            throw new Error(`Could not determine mime type for file: ${imagePath}`);
+            throw new Error(`Could not determine mime type for file: ${path}`);
         }
         if (!mimeType.includes('image')) {
-            throw new Error(`File is not an image: ${imagePath}`);
+            throw new Error(`File is not an image: ${path}`);
         }
-        const buffer = fs.readFileSync(imagePath);
-        const imageKey = await uploadToTenant({
+        const buffer = fs.readFileSync(path);
+        const key = await uploadToTenant({
             mimeType,
             filename,
             buffer,
+            type: 'MEDIA',
         });
+        const registerImage = `#graphql
+            mutation REGISTER_IMAGE($key: String!, $tenantId: ID!) {
+            image {
+                registerImage(key: $key, tenantId: $tenantId) {
+                key
+                }
+            }
+        }`;
+        await apiClient.pimApi(registerImage, {
+            key,
+            tenantId: apiClient.config.tenantId,
+        });
+        return key;
+    };
 
-        return imageKey;
+    const uploadFile = async (path: string): Promise<string> => {
+        const extension = path.split('.').pop() as string;
+        const mimeType = mime.getType(extension);
+        const filename = path.split('/').pop() as string;
+        const buffer = fs.readFileSync(path);
+        return await uploadToTenant({
+            mimeType,
+            filename,
+            buffer,
+            type: 'STATIC',
+        });
+    };
+
+    const uploadMassOperationFile = async (path: string): Promise<string> => {
+        const extension = path.split('.').pop() as string;
+        const mimeType = mime.getType(extension);
+        const filename = path.split('/').pop() as string;
+        const buffer = fs.readFileSync(path);
+        return await uploadToTenant({
+            mimeType,
+            filename,
+            buffer,
+            type: 'MASS_OPERATIONS',
+        });
     };
 
     return {
         uploadToTenant,
         uploadImage,
+        uploadFile,
+        uploadMassOperationFile,
     };
 };

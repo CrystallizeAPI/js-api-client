@@ -176,9 +176,13 @@ After (v5): `createBinaryFileManager(api)`
 ```ts
 import { createBinaryFileManager } from '@crystallize/js-api-client';
 const files = createBinaryFileManager(api);
-const key = await files.uploadImage('/path/to/picture.jpg');
-// Use `key` in subsequent PIM mutations
+const mediaKey = await files.uploadImage('/path/to/picture.jpg');
+const staticKey = await files.uploadFile('/path/to/static/file.pdf');
+const bulkKey = await files.uploadMassOperationFile('/path/to/import.json');
+// Use the returned keys in subsequent PIM mutations
 ```
+
+`uploadImage` enforces image uploads and targets the `MEDIA` storage bucket. `uploadFile` routes other assets to the static file storage, while `uploadMassOperationFile` prepares files for ingestion by the mass operations pipeline. Use `uploadToTenant` if you need to provide your own buffer or specify the upload type manually.
 
 ### Signature verification
 
