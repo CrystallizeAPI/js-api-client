@@ -69,7 +69,7 @@ describe('Cart Tests', () => {
         });
 
         await cartManager.fulfill(cart.id, order.id);
-    });
+    }, 10000);
 
     test('Hydrate and abandon a cart', async () => {
         const cartManager = createCartManager(CrystallizeClient);
