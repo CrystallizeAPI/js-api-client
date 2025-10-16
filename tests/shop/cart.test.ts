@@ -88,6 +88,8 @@ describe('Cart Tests', () => {
 
         expect(cart).toHaveProperty('id');
 
-        await cartManager.abandon(cart.id);
+        const abandonedCart = await cartManager.abandon<Cart>(cart.id, { state: true });
+
+        expect(abandonedCart.state).toBe('abandoned');
     }, 10000);
 });
