@@ -1,7 +1,7 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "5.2.0",
+    "version": "5.3.0",
     "type": "module",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
@@ -39,7 +39,7 @@
         "@crystallize/schema": "workspace:*",
         "json-to-graphql-query": "^2.3.0",
         "mime-lite": "^1.0.3",
-        "zod": "^4.0.15"
+        "zod": "^4.1.12"
     },
     "browser": {
         "fs": false,
