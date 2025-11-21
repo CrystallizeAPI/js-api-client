@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as mime from 'mime-lite';
+import fs from 'fs';
+import mime from 'mime-lite';
 import { ClientInterface } from '../client/create-client.js';
 
 type BinaryInputWithReferenceId = {
