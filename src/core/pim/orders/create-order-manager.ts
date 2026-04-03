@@ -9,7 +9,7 @@ import { ClientInterface } from '../../client/create-client.js';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 import { transformOrderInput } from './helpers.js';
 
-const baseQuery = <OC, OO>(enhancements?: { onCustomer?: OC; onOrder?: OO }) => ({
+const baseQuery = <CustomerExtra, OrderExtra>(enhancements?: { onCustomer?: CustomerExtra; onOrder?: OrderExtra }) => ({
     __on: [
         {
             __typeName: 'Order',
@@ -28,6 +28,23 @@ const baseQuery = <OC, OO>(enhancements?: { onCustomer?: OC; onOrder?: OO }) => 
     ],
 });
 
+/**
+ * Creates an order manager for registering, updating, and managing orders via the Crystallize PIM API.
+ * Requires PIM API credentials (accessTokenId/accessTokenSecret) in the client configuration.
+ *
+ * @param apiClient - A Crystallize client instance created via `createClient` with PIM credentials.
+ * @returns An object with methods to `register`, `update`, `setPayments`, `putInPipelineStage`, and `removeFromPipeline`.
+ *
+ * @example
+ * ```ts
+ * const orderManager = createOrderManager(client);
+ * const { id, createdAt } = await orderManager.register({
+ *   customer: { identifier: 'customer@example.com' },
+ *   cart: [{ sku: 'SKU-001', name: 'My Product', quantity: 1 }],
+ *   total: { gross: 100, net: 80, currency: 'USD' },
+ * });
+ * ```
+ */
 export const createOrderManager = (apiClient: ClientInterface) => {
     const register = async (intentOrder: RegisterOrderInput) => {
         const intent = RegisterOrderInputSchema.parse(intentOrder);
@@ -63,9 +80,9 @@ export const createOrderManager = (apiClient: ClientInterface) => {
     };
 
     // ---
-    const update = async <OnOrder = unknown, OO = unknown>(
+    const update = async <OnOrder = unknown, OrderExtra = unknown>(
         intentOrder: UpdateOrderInput,
-        onOrder?: OO,
+        onOrder?: OrderExtra,
     ): Promise<Required<Pick<Order, 'id' | 'reference'>> & OnOrder> => {
         const { id, ...input } = UpdateOrderInputSchema.parse(intentOrder);
         const mutation = {
@@ -101,16 +118,21 @@ export const createOrderManager = (apiClient: ClientInterface) => {
         pipelineId: string;
         stageId: string;
     };
-    type PutInPipelineStageEnhancedQuery<OC, OO> = {
-        onCustomer?: OC;
-        onOrder?: OO;
+    type PutInPipelineStageEnhancedQuery<CustomerExtra, OrderExtra> = {
+        onCustomer?: CustomerExtra;
+        onOrder?: OrderExtra;
     };
     type PutInPipelineStageDefaultOrderType<OnOrder, OnCustomer> = Required<Pick<Order, 'id' | 'reference'>> & {
         customer: Required<Pick<NonNullable<Order['customer']>, 'identifier'>> & OnCustomer;
     } & OnOrder;
-    const putInPipelineStage = async <OnOrder = unknown, OnCustomer = unknown, OC = unknown, OO = unknown>(
+    const putInPipelineStage = async <
+        OnOrder = unknown,
+        OnCustomer = unknown,
+        CustomerExtra = unknown,
+        OrderExtra = unknown,
+    >(
         { id, pipelineId, stageId }: PutInPipelineStageArgs,
-        enhancements?: PutInPipelineStageEnhancedQuery<OC, OO>,
+        enhancements?: PutInPipelineStageEnhancedQuery<CustomerExtra, OrderExtra>,
     ): Promise<PutInPipelineStageDefaultOrderType<OnOrder, OnCustomer>> => {
         const mutation = {
             updateOrderPipelineStage: {
@@ -133,16 +155,21 @@ export const createOrderManager = (apiClient: ClientInterface) => {
         id: string;
         pipelineId: string;
     };
-    type RemoveFromPipelineEnhancedQuery<OC, OO> = {
-        onCustomer?: OC;
-        onOrder?: OO;
+    type RemoveFromPipelineEnhancedQuery<CustomerExtra, OrderExtra> = {
+        onCustomer?: CustomerExtra;
+        onOrder?: OrderExtra;
     };
     type RemoveFromPipelineDefaultOrderType<OnOrder, OnCustomer> = Required<Pick<Order, 'id' | 'reference'>> & {
         customer: Required<Pick<NonNullable<Order['customer']>, 'identifier'>> & OnCustomer;
     } & OnOrder;
-    const removeFromPipeline = async <OnOrder = unknown, OnCustomer = unknown, OC = unknown, OO = unknown>(
+    const removeFromPipeline = async <
+        OnOrder = unknown,
+        OnCustomer = unknown,
+        CustomerExtra = unknown,
+        OrderExtra = unknown,
+    >(
         { id, pipelineId }: RemoveFromPipelineArgs,
-        enhancements?: RemoveFromPipelineEnhancedQuery<OC, OO>,
+        enhancements?: RemoveFromPipelineEnhancedQuery<CustomerExtra, OrderExtra>,
     ): Promise<RemoveFromPipelineDefaultOrderType<OnOrder, OnCustomer>> => {
         const mutation = {
             deleteOrderPipeline: {
@@ -160,10 +187,10 @@ export const createOrderManager = (apiClient: ClientInterface) => {
     };
 
     // ---
-    type SetPaymentsEnhancedQuery<OC, OP, OO> = {
-        onCustomer?: OC;
-        onPayment?: OP;
-        onOrder?: OO;
+    type SetPaymentsEnhancedQuery<CustomerExtra, PaymentExtra, OrderExtra> = {
+        onCustomer?: CustomerExtra;
+        onPayment?: PaymentExtra;
+        onOrder?: OrderExtra;
     };
     type SetPaymentsDefaultOrderType<OnPayment, OnOrder, OnCustomer> = Required<Pick<Order, 'id' | 'reference'>> & {
         customer: Required<Pick<NonNullable<Order['customer']>, 'identifier'>> & OnCustomer;
@@ -173,13 +200,13 @@ export const createOrderManager = (apiClient: ClientInterface) => {
         OnCustomer = unknown,
         OnPayment = unknown,
         OnOrder = unknown,
-        OC = unknown,
-        OP = unknown,
-        OO = unknown,
+        CustomerExtra = unknown,
+        PaymentExtra = unknown,
+        OrderExtra = unknown,
     >(
         id: string,
         payments: UpdateOrderInput['payment'],
-        enhancements?: SetPaymentsEnhancedQuery<OC, OP, OO>,
+        enhancements?: SetPaymentsEnhancedQuery<CustomerExtra, PaymentExtra, OrderExtra>,
     ): Promise<SetPaymentsDefaultOrderType<OnPayment, OnOrder, OnCustomer>> => {
         const paymentSchema = UpdateOrderInputSchema.shape.payment;
         const input = paymentSchema.parse(payments);

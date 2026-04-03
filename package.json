@@ -1,7 +1,7 @@
 {
     "name": "@crystallize/js-api-client",
     "license": "MIT",
-    "version": "5.3.0",
+    "version": "6.0.0",
     "type": "module",
     "author": "Crystallize <hello@crystallize.com> (https://crystallize.com)",
     "contributors": [
@@ -26,20 +26,20 @@
     },
     "types": "./dist/index.d.ts",
     "main": "./dist/index.cjs",
-    "module": "./dist/index.mjs",
+    "module": "./dist/index.js",
     "devDependencies": {
-        "@tsconfig/node22": "^22.0.2",
-        "@types/node": "^24.2.0",
-        "dotenv": "^16.6.1",
-        "tsup": "^8.5.0",
-        "typescript": "^5.9.2",
-        "vitest": "^3.2.4"
+        "@tsconfig/node22": "^22.0.5",
+        "@types/node": "^25.5.2",
+        "dotenv": "^17.4.0",
+        "tsup": "^8.5.1",
+        "typescript": "^6.0.2",
+        "vitest": "^4.1.2"
     },
     "dependencies": {
         "@crystallize/schema": "workspace:*",
         "json-to-graphql-query": "^2.3.0",
         "mime-lite": "^1.0.3",
-        "zod": "^4.1.12"
+        "zod": "^4.3.6"
     },
     "browser": {
         "fs": false,

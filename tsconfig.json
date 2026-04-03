@@ -1,9 +1,11 @@
 {
     "extends": "@tsconfig/node22/tsconfig.json",
     "compilerOptions": {
+        "ignoreDeprecations": "6.0",
         "outDir": "./dist",
         "declaration": true,
-        "lib": ["es2021", "DOM"],
+        "lib": ["es2021", "DOM", "esnext.disposable"],
+        "types": ["node"],
         "sourceMap": true
     },
     "include": ["./src/**/*"]

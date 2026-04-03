@@ -112,6 +112,20 @@ function buildNestedNavigationQuery(
     return jsonToGraphQLQuery({ query });
 }
 
+/**
+ * Creates a navigation fetcher that builds nested tree queries for folder-based or topic-based navigation.
+ * Use this to retrieve hierarchical navigation structures from the Crystallize catalogue.
+ *
+ * @param client - A Crystallize client instance created via `createClient`.
+ * @returns An object with `byFolders` and `byTopics` methods for fetching navigation trees at a given depth.
+ *
+ * @example
+ * ```ts
+ * const nav = createNavigationFetcher(client);
+ * const folderTree = await nav.byFolders('/', 'en', 3);
+ * const topicTree = await nav.byTopics('/', 'en', 2);
+ * ```
+ */
 export function createNavigationFetcher(client: ClientInterface): {
     byFolders: TreeFetcher;
     byTopics: TreeFetcher;

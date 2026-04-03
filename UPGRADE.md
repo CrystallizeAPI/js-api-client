@@ -1,3 +1,29 @@
+# Upgrade Guide
+
+## From v5
+
+### `extraHeaders` type widened
+
+The `extraHeaders` option on `createClient` now accepts `Record<string, string> | Headers | [string, string][]` instead of only `Record<string, string>`. This is **not a breaking change** — all existing code continues to work. If you were casting headers to `Record<string, string>`, you can now pass `Headers` instances or tuple arrays directly.
+
+### HTTP/2 stability
+
+The HTTP/2 transport now guards against double-settlement of promises when abort signals fire after a request has already completed. No API changes — this is a reliability fix.
+
+### `JSApiClientCallError.statusCode` alias
+
+A read-only `statusCode` getter was added as an alias for `code`, following the Node.js convention. Both properties return the same numeric HTTP status.
+
+### `http2IdleTimeout` option
+
+You can now configure the HTTP/2 session idle timeout via `createClient(config, { http2IdleTimeout: 60000 })`. The default remains 300 000 ms (5 minutes).
+
+### `timeout` option
+
+A request-level timeout can be set via `createClient(config, { timeout: 10000 })`. When set, requests that exceed the timeout are aborted with an `AbortError`.
+
+---
+
 # Upgrade Guide to v5
 
 This guide helps you migrate from v4 to v5 of `@crystallize/js-api-client`.

@@ -19,7 +19,10 @@ type DefaultSubscriptionContractType<OnSubscriptionContract, OnCustomer> = Requi
     customer: Required<Pick<NonNullable<SubscriptionContract['customer']>, 'identifier'>> & OnCustomer;
 } & OnSubscriptionContract;
 
-const buildBaseQuery = <OC, OSC>(onSubscriptionContract?: OSC, onCustomer?: OC) => {
+const buildBaseQuery = <CustomerExtra, SubscriptionContractExtra>(
+    onSubscriptionContract?: SubscriptionContractExtra,
+    onCustomer?: CustomerExtra,
+) => {
     const phaseQuery = {
         period: true,
         unit: true,
@@ -108,15 +111,20 @@ type PageInfo = {
     endCursor: string;
 };
 
-type EnhanceQuery<OSC = unknown, OC = unknown> = {
-    onSubscriptionContract?: OSC;
-    onCustomer?: OC;
+type EnhanceQuery<SubscriptionContractExtra = unknown, CustomerExtra = unknown> = {
+    onSubscriptionContract?: SubscriptionContractExtra;
+    onCustomer?: CustomerExtra;
 };
 
 export const createSubscriptionContractFetcher = (apiClient: ClientInterface) => {
-    const fetchById = async <OnSubscriptionContract = unknown, OnCustomer = unknown, OSC = unknown, OC = unknown>(
+    const fetchById = async <
+        OnSubscriptionContract = unknown,
+        OnCustomer = unknown,
+        SubscriptionContractExtra = unknown,
+        CustomerExtra = unknown,
+    >(
         id: string,
-        enhancements?: EnhanceQuery<OSC, OC>,
+        enhancements?: EnhanceQuery<SubscriptionContractExtra, CustomerExtra>,
     ): Promise<DefaultSubscriptionContractType<OnSubscriptionContract, OnCustomer> | null> => {
         const query = {
             subscriptionContract: {
@@ -147,12 +155,12 @@ export const createSubscriptionContractFetcher = (apiClient: ClientInterface) =>
         OnSubscriptionContract = unknown,
         OnCustomer = unknown,
         EA extends Record<string, unknown> = Record<string, unknown>,
-        OSC = unknown,
-        OC = unknown,
+        SubscriptionContractExtra = unknown,
+        CustomerExtra = unknown,
     >(
         customerIdentifier: string,
         extraArgs?: EA & { filter?: Record<string, unknown> },
-        enhancements?: EnhanceQuery<OSC, OC>,
+        enhancements?: EnhanceQuery<SubscriptionContractExtra, CustomerExtra>,
     ): Promise<{
         pageInfo: PageInfo;
         subscriptionContracts: Array<DefaultSubscriptionContractType<OnSubscriptionContract, OnCustomer>>;

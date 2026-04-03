@@ -4,7 +4,7 @@ import { Customer } from '@crystallize/schema/pim';
 
 export type DefaultCustomerType<R> = R & Required<Pick<Customer, 'identifier' | 'email' | 'firstName' | 'lastName'>>;
 
-const buildBaseQuery = <OC>(onCustomer?: OC) => {
+const buildBaseQuery = <CustomerExtra>(onCustomer?: CustomerExtra) => {
     return {
         identifier: true,
         email: true,
@@ -15,9 +15,9 @@ const buildBaseQuery = <OC>(onCustomer?: OC) => {
 };
 
 export const createCustomerFetcher = (apiClient: ClientInterface) => {
-    const fetchByIdentifier = async <OnCustomer = unknown, OC = unknown>(
+    const fetchByIdentifier = async <OnCustomer = unknown, CustomerExtra = unknown>(
         identifier: string,
-        onCustomer?: OC,
+        onCustomer?: CustomerExtra,
     ): Promise<DefaultCustomerType<OnCustomer> | null> => {
         const query = {
             customer: {
@@ -42,9 +42,9 @@ export const createCustomerFetcher = (apiClient: ClientInterface) => {
         ).customer;
     };
 
-    const fetchByExternalReference = async <OnCustomer = unknown, OC = unknown>(
+    const fetchByExternalReference = async <OnCustomer = unknown, CustomerExtra = unknown>(
         { key, value }: { key: string; value?: string },
-        onCustomer?: OC,
+        onCustomer?: CustomerExtra,
     ): Promise<DefaultCustomerType<OnCustomer> | null> => {
         const query = {
             customer: {

@@ -34,6 +34,20 @@ const generatePresignedUploadRequest = `#graphql
     }
 }`;
 
+/**
+ * Creates a binary file manager for uploading images, static files, and mass operation files to a Crystallize tenant.
+ * Requires PIM API credentials (accessTokenId/accessTokenSecret) in the client configuration.
+ *
+ * @param apiClient - A Crystallize client instance created via `createClient` with PIM credentials.
+ * @returns An object with methods to `uploadToTenant`, `uploadImage`, `uploadFile`, and `uploadMassOperationFile`.
+ *
+ * @example
+ * ```ts
+ * const fileManager = createBinaryFileManager(client);
+ * const imageKey = await fileManager.uploadImage('/path/to/image.png');
+ * const fileKey = await fileManager.uploadFile('/path/to/document.pdf');
+ * ```
+ */
 export const createBinaryFileManager = (apiClient: ClientInterface) => {
     // this function returns the key of the uploaded file
     const uploadToTenant = async ({ type = 'MEDIA', mimeType, filename, buffer }: BinaryHandler): Promise<string> => {

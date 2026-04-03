@@ -10,20 +10,31 @@ export type GrabResponse = {
     json: <T>() => Promise<T>;
     text: () => Promise<string>;
 };
+export type GrabOptions = {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    signal?: AbortSignal;
+};
 export type Grab = {
-    grab: (url: string, options?: RequestInit | any | undefined) => Promise<GrabResponse>;
+    grab: (url: string, options?: GrabOptions) => Promise<GrabResponse>;
     close: () => void;
 };
 
 type Options = {
     useHttp2?: boolean;
+    http2IdleTimeout?: number;
 };
 export const createGrabber = (options?: Options): Grab => {
-    const clients = new Map();
-    const IDLE_TIMEOUT = 300000; // 5 min idle timeout
-    const grab = async (url: string, grabOptions?: RequestInit | any): Promise<GrabResponse> => {
+    const clients = new Map<
+        string,
+        { client: ClientHttp2Session; idleTimeout: ReturnType<typeof setTimeout> | null }
+    >();
+    const IDLE_TIMEOUT = options?.http2IdleTimeout ?? 300000; // default 5 min idle timeout
+    const grab = async (url: string, grabOptions?: GrabOptions): Promise<GrabResponse> => {
         if (options?.useHttp2 !== true) {
-            return fetch(url, grabOptions);
+            const { signal, ...fetchOptions } = grabOptions || {};
+            return fetch(url, { ...fetchOptions, signal });
         }
         const closeAndDeleteClient = (origin: string) => {
             const clientObj = clients.get(origin);
@@ -35,7 +46,10 @@ export const createGrabber = (options?: Options): Grab => {
 
         const resetIdleTimeout = (origin: string) => {
             const clientObj = clients.get(origin);
-            if (clientObj && clientObj.idleTimeout) {
+            if (!clientObj) {
+                return;
+            }
+            if (clientObj.idleTimeout) {
                 clearTimeout(clientObj.idleTimeout);
             }
             clientObj.idleTimeout = setTimeout(() => {
@@ -44,7 +58,7 @@ export const createGrabber = (options?: Options): Grab => {
         };
 
         const getClient = (origin: string): ClientHttp2Session => {
-            if (!clients.has(origin) || clients.get(origin).client.closed) {
+            if (!clients.has(origin) || clients.get(origin)!.client.closed) {
                 closeAndDeleteClient(origin);
                 const client = connect(origin);
                 client.on('error', () => {
@@ -53,21 +67,50 @@ export const createGrabber = (options?: Options): Grab => {
                 clients.set(origin, { client, idleTimeout: null });
                 resetIdleTimeout(origin);
             }
-            return clients.get(origin).client;
+            return clients.get(origin)!.client;
         };
 
         return new Promise((resolve, reject) => {
+            let settled = false;
+            const safeResolve = (value: GrabResponse) => {
+                if (settled) return;
+                settled = true;
+                resolve(value);
+            };
+            const safeReject = (reason: unknown) => {
+                if (settled) return;
+                settled = true;
+                reject(reason);
+            };
+
             const urlObj = new URL(url);
             const origin = urlObj.origin;
             const client = getClient(origin);
             resetIdleTimeout(origin);
             const headers = {
-                ':method': grabOptions.method || 'GET',
+                ':method': grabOptions?.method || 'GET',
                 ':path': urlObj.pathname + urlObj.search,
-                ...grabOptions.headers,
+                ...grabOptions?.headers,
             };
             const req = client.request(headers);
-            if (grabOptions.body) {
+
+            if (grabOptions?.signal) {
+                const signal = grabOptions.signal;
+                if (signal.aborted) {
+                    req.close();
+                    safeReject(signal.reason);
+                    return;
+                }
+                const onAbort = () => {
+                    req.close();
+                    safeReject(signal.reason);
+                };
+                signal.addEventListener('abort', onAbort, { once: true });
+                req.on('end', () => signal.removeEventListener('abort', onAbort));
+                req.on('error', () => signal.removeEventListener('abort', onAbort));
+            }
+
+            if (grabOptions?.body) {
                 req.write(grabOptions.body);
             }
             req.setEncoding('utf8');
@@ -97,12 +140,12 @@ export const createGrabber = (options?: Options): Grab => {
 
                 req.on('end', () => {
                     resetIdleTimeout(origin);
-                    resolve(response);
+                    safeResolve(response);
                 });
 
                 req.on('error', (err) => {
                     resetIdleTimeout(origin);
-                    reject(err);
+                    safeReject(err);
                 });
             });
             req.end();

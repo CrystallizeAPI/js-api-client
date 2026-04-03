@@ -20,7 +20,11 @@ export type DefaultOrderType<OnOrder = unknown, OnOrderItem = unknown, OnCustome
     total: NonNullable<Order['total']>;
 } & OnOrder;
 
-const buildBaseQuery = <OO, OOI, OC>(onOrder?: OO, onOrderItem?: OOI, onCustomer?: OC) => {
+const buildBaseQuery = <OrderExtra, OrderItemExtra, CustomerExtra>(
+    onOrder?: OrderExtra,
+    onOrderItem?: OrderItemExtra,
+    onCustomer?: CustomerExtra,
+) => {
     const priceQuery = {
         gross: true,
         net: true,
@@ -62,25 +66,39 @@ type PageInfo = {
     endCursor: string;
 };
 
-type EnhanceQuery<OO = unknown, OOI = unknown, OC = unknown> = {
-    onOrder?: OO;
-    onOrderItem?: OOI;
-    onCustomer?: OC;
+type EnhanceQuery<OrderExtra = unknown, OrderItemExtra = unknown, CustomerExtra = unknown> = {
+    onOrder?: OrderExtra;
+    onOrderItem?: OrderItemExtra;
+    onCustomer?: CustomerExtra;
 };
 
+/**
+ * Creates an order fetcher for retrieving orders from the Crystallize PIM API.
+ * Requires PIM API credentials (accessTokenId/accessTokenSecret) in the client configuration.
+ *
+ * @param apiClient - A Crystallize client instance created via `createClient` with PIM credentials.
+ * @returns An object with `byId` and `byCustomerIdentifier` methods for fetching orders.
+ *
+ * @example
+ * ```ts
+ * const orderFetcher = createOrderFetcher(client);
+ * const order = await orderFetcher.byId('order-id-123');
+ * const { orders, pageInfo } = await orderFetcher.byCustomerIdentifier('customer@example.com');
+ * ```
+ */
 export function createOrderFetcher(apiClient: ClientInterface) {
     const fetchPaginatedByCustomerIdentifier = async <
         OnOrder = unknown,
         OnOrderItem = unknown,
         OnCustomer = unknown,
         EA extends Record<string, unknown> = Record<string, unknown>,
-        OC = unknown,
-        OOI = unknown,
-        OO = unknown,
+        CustomerExtra = unknown,
+        OrderItemExtra = unknown,
+        OrderExtra = unknown,
     >(
         customerIdentifier: string,
         extraArgs?: EA & { filter?: Record<string, unknown> & { customer?: Record<string, unknown> } },
-        enhancements?: EnhanceQuery<OO, OOI, OC>,
+        enhancements?: EnhanceQuery<OrderExtra, OrderItemExtra, CustomerExtra>,
     ): Promise<{
         pageInfo: PageInfo;
         orders: Array<DefaultOrderType<OnOrder, OnOrderItem, OnCustomer>>;
@@ -142,12 +160,12 @@ export function createOrderFetcher(apiClient: ClientInterface) {
         OnOrder = unknown,
         OnOrderItem = unknown,
         OnCustomer = unknown,
-        OC = unknown,
-        OOI = unknown,
-        OO = unknown,
+        CustomerExtra = unknown,
+        OrderItemExtra = unknown,
+        OrderExtra = unknown,
     >(
         id: string,
-        enhancements?: EnhanceQuery<OO, OOI, OC>,
+        enhancements?: EnhanceQuery<OrderExtra, OrderItemExtra, CustomerExtra>,
     ): Promise<DefaultOrderType<OnOrder, OnOrderItem, OnCustomer> | null> => {
         const query = {
             order: {

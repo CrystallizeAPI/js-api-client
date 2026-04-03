@@ -13,6 +13,7 @@ export type ClientInterface = {
     shopCartApi: ApiCaller;
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
     close: () => void;
+    [Symbol.dispose]: () => void;
 };
 export type ClientConfiguration = {
     tenantIdentifier: string;
@@ -29,7 +30,11 @@ export type ClientConfiguration = {
 export type CreateClientOptions = {
     useHttp2?: boolean;
     profiling?: ProfilingOptions;
-    extraHeaders?: RequestInit['headers'];
+    extraHeaders?: Record<string, string> | Headers | [string, string][];
+    /** Request timeout in milliseconds. When set, requests that take longer will be aborted. */
+    timeout?: number;
+    /** HTTP/2 idle timeout in milliseconds. Defaults to 300000 (5 minutes). */
+    http2IdleTimeout?: number;
     shopApiToken?: {
         doNotFetch?: boolean;
         scopes?: string[];
@@ -47,10 +52,29 @@ export const apiHost = (configuration: ClientConfiguration) => {
     };
 };
 
+/**
+ * Creates a Crystallize API client that provides access to catalogue, discovery, PIM, and shop cart APIs.
+ * Use this as the main entry point for all interactions with the Crystallize APIs.
+ *
+ * @param configuration - The tenant configuration including identifier and authentication credentials.
+ * @param options - Optional settings for HTTP/2, profiling, timeouts, and extra headers.
+ * @returns A client interface with pre-configured API callers for each Crystallize endpoint.
+ *
+ * @example
+ * ```ts
+ * const client = createClient({
+ *   tenantIdentifier: 'my-tenant',
+ *   accessTokenId: 'my-token-id',
+ *   accessTokenSecret: 'my-token-secret',
+ * });
+ * const data = await client.catalogueApi(query);
+ * ```
+ */
 export const createClient = (configuration: ClientConfiguration, options?: CreateClientOptions): ClientInterface => {
     const identifier = configuration.tenantIdentifier;
     const { grab, close: grabClose } = createGrabber({
         useHttp2: options?.useHttp2,
+        http2IdleTimeout: options?.http2IdleTimeout,
     });
 
     // let's rewrite the configuration based on the need of the endpoint
@@ -100,5 +124,6 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
             origin: configuration.origin,
         },
         close: grabClose,
+        [Symbol.dispose]: grabClose,
     };
 };

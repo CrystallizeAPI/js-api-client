@@ -63,6 +63,8 @@ api.close();
     - `origin` custom host suffix (defaults to `.crystallize.com`)
 - options
     - `useHttp2` enable HTTP/2 transport
+    - `timeout` request timeout in milliseconds; requests that take longer will be aborted
+    - `http2IdleTimeout` HTTP/2 idle timeout in milliseconds (default `300000` — 5 minutes). Use a shorter value for serverless functions, a longer one for long-running servers
     - `profiling` callbacks
     - `extraHeaders` extra request headers for all calls
     - `shopApiToken` controls auto-fetch: `{ doNotFetch?: boolean; scopes?: string[]; expiresIn?: number }`
@@ -88,6 +90,23 @@ Pass the relevant credentials to `createClient`:
 - `shopApiToken` optional; if omitted, a token will be fetched using your PIM credentials on first cart call
 
 See the official docs for auth: https://crystallize.com/learn/developer-guides/api-overview/authentication
+
+### Error handling
+
+API call errors throw a `JSApiClientCallError` with both `code` and `statusCode` properties for the HTTP status:
+
+```typescript
+import { JSApiClientCallError } from '@crystallize/js-api-client';
+
+try {
+    await api.pimApi(`query { … }`);
+} catch (e) {
+    if (e instanceof JSApiClientCallError) {
+        console.error(`HTTP ${e.statusCode}:`, e.message);
+        // e.code also works (same value)
+    }
+}
+```
 
 ## Profiling requests
 
@@ -378,7 +397,36 @@ const bulkKey = await files.uploadMassOperationFile('/absolute/path/to/import.zi
 
 [crystallizeobject]: crystallize_marketing|folder|625619f6615e162541535959
 
-## Mass Call Client
+## Mass Call Client (Deprecated)
+
+> **Deprecated:** Use mature ecosystem packages like [`p-limit`](https://www.npmjs.com/package/p-limit) or [`p-queue`](https://www.npmjs.com/package/p-queue) instead. They provide better error handling, TypeScript support, and are actively maintained.
+
+### Recommended alternative using p-limit
+
+```typescript
+import pLimit from 'p-limit';
+import { createClient } from '@crystallize/js-api-client';
+
+const api = createClient({ tenantIdentifier: 'my-tenant', accessTokenId: '…', accessTokenSecret: '…' });
+const limit = pLimit(5); // max 5 concurrent requests
+
+const mutations = items.map((item) =>
+    limit(() =>
+        api.pimApi(
+            `mutation UpdateItem($id: ID!, $name: String!) { product { update(id: $id, input: { name: $name }) { id } } }`,
+            { id: item.id, name: item.name },
+        ),
+    ),
+);
+
+const results = await Promise.allSettled(mutations);
+const failed = results.filter((r) => r.status === 'rejected');
+console.log(`Done: ${results.length - failed.length} succeeded, ${failed.length} failed`);
+```
+
+### Legacy usage
+
+The mass call client is still functional but will emit a deprecation warning on first use.
 
 Sometimes, when you have many calls to do, whether they are queries or mutations, you want to be able to manage them asynchronously. This is the purpose of the Mass Call Client. It will let you be asynchronous, managing the heavy lifting of lifecycle, retry, incremental increase or decrease of the pace, etc.
 
@@ -396,8 +444,7 @@ These are the main features:
 - Optional lifecycle function *afterRequest* (sync) to execute after each request. You also get the result in there, if needed
 
 ```javascript
-// import { createMassCallClient } from '@crystallize/js-api-client';
-const client = createMassCallClient(api, { initialSpawn: 1 }); // api created via createClient(...)
+const client = createMassCallClient(api, { initialSpawn: 1 });
 
 async function run() {
     for (let i = 1; i <= 54; i++) {
@@ -416,5 +463,3 @@ async function run() {
 }
 run();
 ```
-
-Full example: https://github.com/CrystallizeAPI/libraries/blob/main/components/js-api-client/src/examples/dump-tenant.ts

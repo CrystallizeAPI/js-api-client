@@ -65,6 +65,23 @@ const buildGETSituationChallenge = (request: SimplifiedRequest) => {
     return null;
 };
 
+/**
+ * Creates a signature verifier for validating Crystallize webhook and app signatures.
+ * Use this to verify that incoming requests genuinely originate from Crystallize.
+ *
+ * @param params - An object containing a `sha256` hash function, a `jwtVerify` function, and the webhook `secret`.
+ * @returns An async function that takes a signature string and a simplified request, and resolves to the verified payload or throws on invalid signatures.
+ *
+ * @example
+ * ```ts
+ * const verifier = createSignatureVerifier({
+ *   sha256: async (data) => createHash('sha256').update(data).digest('hex'),
+ *   jwtVerify: async (token, secret) => jwt.verify(token, secret),
+ *   secret: process.env.CRYSTALLIZE_WEBHOOK_SECRET,
+ * });
+ * const payload = await verifier(signatureHeader, { url, method, body });
+ * ```
+ */
 export const createSignatureVerifier = ({ sha256, jwtVerify, secret }: CreateAsyncSignatureVerifierParams) => {
     return async (signature: string, request: SimplifiedRequest): Promise<CrystallizeSignature> => {
         try {

@@ -4,7 +4,7 @@ import { Grab } from './create-grabber.js';
 
 const getExpirationAtFromToken = (token: string) => {
     const payload = token.split('.')[1];
-    const decodedPayload = Buffer.from(payload, 'base64').toString('utf-8');
+    const decodedPayload = atob(payload);
     const parsedPayload = JSON.parse(decodedPayload);
     return parsedPayload.exp * 1000;
 };

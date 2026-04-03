@@ -22,6 +22,25 @@ export type CatalogueFetcherGrapqhqlOnFolder<OC = unknown> = {
     onChildren?: OC;
 };
 
+/**
+ * Creates a catalogue fetcher that executes queries against the Crystallize Catalogue API using JSON-based query objects.
+ * Use this when you want to build catalogue queries programmatically instead of writing raw GraphQL strings.
+ *
+ * @param client - A Crystallize client instance created via `createClient`.
+ * @returns A function that accepts a JSON query object and optional variables, and returns the catalogue data.
+ *
+ * @example
+ * ```ts
+ * const fetcher = createCatalogueFetcher(client);
+ * const data = await fetcher({
+ *   catalogue: {
+ *     __args: { path: '/my-product', language: 'en' },
+ *     name: true,
+ *     path: true,
+ *   },
+ * });
+ * ```
+ */
 export const createCatalogueFetcher = (client: ClientInterface) => {
     return <T = unknown>(query: object, variables?: VariablesType): Promise<T> => {
         return client.catalogueApi<T>(jsonToGraphQLQuery({ query }), variables);
@@ -64,7 +83,7 @@ function onFolder<OF = unknown>(onFolder?: OF, c?: CatalogueFetcherGrapqhqlOnFol
     const children = () => {
         if (c?.onChildren) {
             return {
-                chidlren: {
+                children: {
                     ...c.onChildren,
                 },
             };

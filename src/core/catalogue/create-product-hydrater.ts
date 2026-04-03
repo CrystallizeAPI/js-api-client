@@ -87,7 +87,7 @@ function byPaths(client: ClientInterface, options?: ProductHydraterOptions): Pro
         }, {} as any);
 
         const query = {
-            ...{ ...productListQuery },
+            ...productListQuery,
             ...(extraQuery !== undefined ? extraQuery : {}),
         };
 
@@ -140,6 +140,21 @@ function bySkus(client: ClientInterface, options?: ProductHydraterOptions): Prod
     };
 }
 
+/**
+ * Creates a product hydrater that fetches full product data from the catalogue by paths or SKUs.
+ * Use this to enrich a list of product references with complete variant, pricing, and attribute data.
+ *
+ * @param client - A Crystallize client instance created via `createClient`.
+ * @param options - Optional settings for market identifiers, price lists, and price-for-everyone inclusion.
+ * @returns An object with `byPaths` and `bySkus` methods for hydrating products.
+ *
+ * @example
+ * ```ts
+ * const hydrater = createProductHydrater(client);
+ * const products = await hydrater.byPaths(['/shop/my-product'], 'en');
+ * const productsBySkus = await hydrater.bySkus(['SKU-001', 'SKU-002'], 'en');
+ * ```
+ */
 export function createProductHydrater(client: ClientInterface, options?: ProductHydraterOptions) {
     return {
         byPaths: byPaths(client, options),
