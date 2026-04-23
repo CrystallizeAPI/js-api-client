@@ -28,4 +28,5 @@ export * from './core/shop/create-cart-manager.js';
 export * from './core/pricing.js';
 export * from './core/pim/create-binary-file-manager.js';
 export * from './core/create-signature-verifier.js';
+export * from './core/create-plugin-playload-decrypter.js';
 export * from './core/create-mass-call-client.js';

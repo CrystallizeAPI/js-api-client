@@ -44,7 +44,7 @@ api.close();
 
 - One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `shopCartApi`
 - High-level helpers: `createCatalogueFetcher`, `createNavigationFetcher`, `createProductHydrater`, `createOrderFetcher`, `createOrderManager`, `createCustomerManager`, `createCustomerGroupManager`, `createSubscriptionContractManager`, `createCartManager`
-- Utilities: `createSignatureVerifier`, `createBinaryFileManager`, `pricesForUsageOnTier`, request `profiling`
+- Utilities: `createSignatureVerifier`, `createPluginPayloadDecrypter`, `createBinaryFileManager`, `pricesForUsageOnTier`, request `profiling`
 - Build GraphQL with objects using `json-to-graphql-query` (see section below)
 - Strong typing via `@crystallize/schema` inputs and outputs
 - Upgrading? See [UPGRADE.md](UPGRADE.md) for v4 → v5 migration
@@ -362,6 +362,63 @@ await verify(signatureJwtFromHeader, {
     webhookUrl: 'https://example.com/api/webhook', // the configured webhook URL in Crystallize
 });
 ```
+
+## Plugin payload decryption
+
+Use `createPluginPayloadDecrypter` to decrypt a Crystallize plugin JWE payload (outer JWE → nested JWS envelope → per-field `encryptedSecrets`) and optionally verify the inner JWS against a JWKS. This is the single entry point the CLI and any vendor-side integration should rely on.
+
+The factory takes the vendor's private JWK (as produced by `crystallize plugin keygen`) and optional `verify` settings, and returns a reusable function that accepts a JWE compact payload per call. The private key and the JWKS resolver are built once and reused — so for a server handling many webhook calls, create the decrypter once at boot.
+
+Only `RSA-OAEP` / `RSA-OAEP-256` with `A*GCM` content encryption are accepted on the outer JWE. When the outer header carries `cty: "JWT"`, the plaintext is treated as a compact JWS whose claims form the envelope.
+
+Signature verification is opt-in: pass `verify` to enable it. When `verify` is omitted — or when verification fails — the envelope and per-field secrets are still returned so the caller can inspect them; `signature.verified` / `signature.skipped` / `signature.reason` tell you whether to trust the result.
+
+```typescript
+import { readFile } from 'node:fs/promises';
+import { createPluginPayloadDecrypter } from '@crystallize/js-api-client';
+
+const privateJwk = JSON.parse(await readFile('./private.jwk.json', 'utf8'));
+
+// Decrypt only — no signature check. Good for local dev / smoke tests.
+const decrypt = createPluginPayloadDecrypter({ privateJwk });
+const decoded = await decrypt(jweCompact);
+
+if (decoded.envelope) {
+    console.log('tenant:', decoded.envelope.tenantIdentifier);
+    console.log('config:', decoded.envelope.config);
+    console.log('secrets:', decoded.secrets); // { StripeApiKey: 'sk_live_…', … }
+}
+```
+
+Enable verification by passing `verify` with at least an `audience` (your plugin identifier). `issuer` defaults to `https://api.crystallize.com` and `jwksUrl` defaults to `${issuer}/.well-known/jwks.json`, so production usage is a one-liner:
+
+```typescript
+// Production — issuer + JWKS URL default to api.crystallize.com.
+const decrypt = createPluginPayloadDecrypter({
+    privateJwk,
+    verify: { audience: 'com.vendor.plugin' },
+});
+
+const verified = await decrypt(jweCompact);
+if (!verified.signature.verified) {
+    // Signature check skipped or failed — envelope + secrets are still populated but MUST be treated as untrusted.
+    console.warn('signature not trusted:', verified.signature.reason);
+}
+```
+
+Other `verify` fields: `clockTolerance` (seconds, defaults to `30`), `verifyBackendToken` (also verify `envelope.backendToken` against the same JWKS, defaults to `false`).
+
+The returned `DecryptedPluginPayload` contains:
+
+- `protectedHeader` — outer JWE protected header
+- `innerProtectedHeader` — inner JWS protected header, when the payload is nested
+- `envelope` — verified (or decoded) JWS claims, or `null` for a non-nested payload
+- `plaintext` — raw outer plaintext when the payload is not a nested JWT, otherwise `null`
+- `secrets` — plain-text per-field secrets decrypted from `envelope.encryptedSecrets`
+- `signature` — `{ verified, skipped?, reason?, issuer?, audience?, algorithm? }`
+- `backendToken` — `{ verified, skipped?, reason?, claims? }` when `envelope.backendToken` is present, otherwise `null`
+
+> Security: `secrets` and decoded `envelope` claims contain cleartext credentials. Do not log or forward them to shared sinks.
 
 ## Pricing utilities
 
