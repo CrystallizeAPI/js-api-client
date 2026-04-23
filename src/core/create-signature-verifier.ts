@@ -1,3 +1,5 @@
+import { jwtVerify } from 'jose';
+
 export type CrystallizeSignature = {
     aud: 'webhook' | 'app' | 'frontend';
     sub: 'signature';
@@ -13,14 +15,27 @@ export type CrystallizeSignature = {
 export type SimplifiedRequest = {
     url?: string;
     method?: string;
-    body?: any;
+    body?: string | null;
     webhookUrl?: string;
+};
+
+export type CreateSignatureVerifierParams = {
+    secret: string;
+};
+
+export type SignatureVerifier = (signature: string, request: SimplifiedRequest) => Promise<CrystallizeSignature>;
+
+const sha256Hex = async (data: string): Promise<string> => {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+    return Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
 };
 
 const newQueryParams = (webhookUrl: string, receivedUrl: string): Record<string, string> => {
     const parseQueryString = (url: string): Record<string, string> => {
         const urlParams = new URL(url).searchParams;
-        let params: Record<string, string> = {};
+        const params: Record<string, string> = {};
         for (const [key, value] of urlParams.entries()) {
             params[key] = value;
         }
@@ -30,74 +45,60 @@ const newQueryParams = (webhookUrl: string, receivedUrl: string): Record<string,
     const receivedParams = parseQueryString(receivedUrl);
     const result: Record<string, string> = {};
     for (const [key, value] of Object.entries(receivedParams)) {
-        if (!webhookOriginalParams.hasOwnProperty(key)) {
+        if (!Object.prototype.hasOwnProperty.call(webhookOriginalParams, key)) {
             result[key] = value;
         }
     }
-
     return result;
 };
 
-export type CreateAsyncSignatureVerifierParams = {
-    sha256: (data: string) => Promise<string>;
-    jwtVerify: (token: string, secret: string, options?: any) => Promise<CrystallizeSignature>;
-    secret: string;
-};
+const buildChallenge = (request: SimplifiedRequest) => ({
+    url: request.url,
+    method: request.method,
+    body: request.body ? JSON.parse(request.body) : null,
+});
 
-const buildChallenge = (request: SimplifiedRequest) => {
-    return {
-        url: request.url,
-        method: request.method,
-        body: request.body ? JSON.parse(request.body) : null,
-    };
-};
 const buildGETSituationChallenge = (request: SimplifiedRequest) => {
     if (request.url && request.webhookUrl && request.method && request.method.toLowerCase() === 'get') {
         const body = newQueryParams(request.webhookUrl, request.url);
         if (Object.keys(body).length > 0) {
-            return {
-                url: request.webhookUrl,
-                method: request.method,
-                body,
-            };
+            return { url: request.webhookUrl, method: request.method, body };
         }
     }
     return null;
 };
 
 /**
- * Creates a signature verifier for validating Crystallize webhook and app signatures.
- * Use this to verify that incoming requests genuinely originate from Crystallize.
- *
- * @param params - An object containing a `sha256` hash function, a `jwtVerify` function, and the webhook `secret`.
- * @returns An async function that takes a signature string and a simplified request, and resolves to the verified payload or throws on invalid signatures.
+ * Creates a signature verifier for validating Crystallize webhook / app / frontend signatures.
+ * Verifies the HS256 JWT envelope with the shared secret and matches its `hmac` claim against
+ * a SHA-256 of the reconstructed challenge.
  *
  * @example
  * ```ts
- * const verifier = createSignatureVerifier({
- *   sha256: async (data) => createHash('sha256').update(data).digest('hex'),
- *   jwtVerify: async (token, secret) => jwt.verify(token, secret),
- *   secret: process.env.CRYSTALLIZE_WEBHOOK_SECRET,
- * });
- * const payload = await verifier(signatureHeader, { url, method, body });
+ * const verify = createSignatureVerifier({ secret: process.env.CRYSTALLIZE_WEBHOOK_SECRET! });
+ * const payload = await verify(signatureHeader, { url, method, body: rawBodyString });
  * ```
  */
-export const createSignatureVerifier = ({ sha256, jwtVerify, secret }: CreateAsyncSignatureVerifierParams) => {
-    return async (signature: string, request: SimplifiedRequest): Promise<CrystallizeSignature> => {
+export const createSignatureVerifier = ({ secret }: CreateSignatureVerifierParams): SignatureVerifier => {
+    const secretBytes = new TextEncoder().encode(secret);
+
+    return async (signature, request) => {
         try {
-            const payload = await jwtVerify(signature, secret);
-            const isValid = async (challenge: any) => payload.hmac === (await sha256(JSON.stringify(challenge)));
-            const challenge = buildChallenge(request);
-            if (!(await isValid(challenge))) {
-                const newChallenge = buildGETSituationChallenge(request);
-                if (newChallenge && (await isValid(newChallenge))) {
-                    return payload;
-                }
-                throw new Error('Invalid signature. HMAC does not match.');
+            const { payload } = await jwtVerify(signature, secretBytes, { algorithms: ['HS256'] });
+            const claims = payload as unknown as CrystallizeSignature;
+            const isValid = async (challenge: unknown) => claims.hmac === (await sha256Hex(JSON.stringify(challenge)));
+
+            if (await isValid(buildChallenge(request))) {
+                return claims;
             }
-            return payload;
-        } catch (exception: any) {
-            throw new Error('Invalid signature. ' + exception.message);
+            const fallback = buildGETSituationChallenge(request);
+            if (fallback && (await isValid(fallback))) {
+                return claims;
+            }
+            throw new Error('HMAC does not match.');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error('Invalid signature. ' + message);
         }
     };
 };

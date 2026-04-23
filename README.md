@@ -332,21 +332,14 @@ await cart.place(hydrated.id);
 await cart.fulfill(hydrated.id, orderId);
 ```
 
-## Signature verification (async)
+## Signature verification
 
-Use `createSignatureVerifier` to validate Crystallize signatures for webhooks or frontend calls. Provide your own `jwtVerify` and `sha256` implementations.
+Use `createSignatureVerifier` to validate Crystallize signatures for webhooks, apps or frontend calls. The verifier decodes the HS256 JWT envelope with the shared secret and matches its `hmac` claim against a SHA-256 of the reconstructed challenge — all through the bundled `jose` and the platform's `crypto.subtle`, so you don't need to pass your own JWT or hashing implementation.
 
 ```typescript
-import jwt from 'jsonwebtoken';
-import { createHmac } from 'crypto';
 import { createSignatureVerifier } from '@crystallize/js-api-client';
 
-const secret = process.env.CRYSTALLIZE_SIGNATURE_SECRET!;
-const verify = createSignatureVerifier({
-    secret,
-    jwtVerify: async (token, s) => jwt.verify(token, s) as any,
-    sha256: async (data) => createHmac('sha256', secret).update(data).digest('hex'),
-});
+const verify = createSignatureVerifier({ secret: process.env.CRYSTALLIZE_SIGNATURE_SECRET! });
 
 // POST example
 await verify(signatureJwtFromHeader, {

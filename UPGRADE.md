@@ -1,5 +1,49 @@
 # Upgrade Guide
 
+## From v6
+
+### `createSignatureVerifier` no longer takes `jwtVerify` / `sha256` (breaking)
+
+`jose` is now a direct dependency of the client, and `createSignatureVerifier` uses it internally together with the platform's `crypto.subtle` for SHA-256 hashing. You no longer need to (and cannot) pass your own `jwtVerify` or `sha256` implementations.
+
+Before (v6):
+
+```ts
+import jwt from 'jsonwebtoken';
+import { createHmac } from 'crypto';
+import { createSignatureVerifier } from '@crystallize/js-api-client';
+
+const verify = createSignatureVerifier({
+    secret,
+    jwtVerify: async (token, s) => jwt.verify(token, s) as any,
+    sha256: async (data) => createHmac('sha256', secret).update(data).digest('hex'),
+});
+```
+
+After (v7):
+
+```ts
+import { createSignatureVerifier } from '@crystallize/js-api-client';
+
+const verify = createSignatureVerifier({ secret });
+```
+
+The verifier expects an HS256-signed JWT envelope (Crystallize's signature format) and runs on any runtime that exposes `crypto.subtle` — Node 18+, browsers, workers, edge runtimes.
+
+The `CreateAsyncSignatureVerifierParams` type has been renamed to `CreateSignatureVerifierParams` (single `secret` field). A new `SignatureVerifier` function type is exported for typing the returned verifier.
+
+### `SimplifiedRequest.body` is now `string | null` (breaking)
+
+`SimplifiedRequest.body` was previously typed as `any`, but the verifier has always called `JSON.parse(body)` when truthy, so a raw JSON string was the only working shape. The type now reflects that. If you were passing an already-parsed object, stringify it first (`body: JSON.stringify(obj)`), or — better — pass the raw request body string you received from Crystallize.
+
+### New: `createPluginPayloadDecrypter`
+
+Decrypts (and optionally verifies) Crystallize plugin JWE payloads. This is the single entry point for vendor-side integrations — the CLI now consumes it too. See the "Plugin payload decryption" section of the README. `jose` is bundled, so vendors only pass the private JWK and (optionally) a `verify` object; `issuer` defaults to `https://api.crystallize.com` and `jwksUrl` is derived from the issuer when not set.
+
+### `jose` added as a runtime dependency
+
+`jose@^5.10.0` is now a direct dependency of `@crystallize/js-api-client`. If your bundler was tree-shaking away a previously-peer JWT library, no action is needed; jose is small and universal.
+
 ## From v5
 
 ### `extraHeaders` type widened
