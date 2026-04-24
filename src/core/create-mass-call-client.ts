@@ -26,12 +26,14 @@ export type MassClientInterface = ClientInterface & {
     discoveryApi: ApiCaller;
     pimApi: ApiCaller;
     nextPimApi: ApiCaller;
+    meApi: ApiCaller;
     shopCartApi: ApiCaller;
     enqueue: {
         catalogueApi: QueuedApiCaller;
         discoveryApi: QueuedApiCaller;
         pimApi: QueuedApiCaller;
         nextPimApi: QueuedApiCaller;
+        meApi: QueuedApiCaller;
         shopCartApi: QueuedApiCaller;
     };
 };
@@ -240,18 +242,21 @@ export function createMassCallClient(
         pimApi: client.pimApi,
         shopCartApi: client.shopCartApi,
         nextPimApi: client.nextPimApi,
+        meApi: client.meApi,
         config: client.config,
         close: client.close,
         [Symbol.dispose]: client[Symbol.dispose],
         enqueue: Object.fromEntries(
-            (['catalogueApi', 'discoveryApi', 'pimApi', 'nextPimApi', 'shopCartApi'] as const).map((apiName) => [
-                apiName,
-                (query: string, variables?: VariablesType): string => {
-                    const key = `${apiName}-${counter++}`;
-                    promises.push({ key, caller: client[apiName], query, variables });
-                    return key;
-                },
-            ]),
+            (['catalogueApi', 'discoveryApi', 'pimApi', 'nextPimApi', 'meApi', 'shopCartApi'] as const).map(
+                (apiName) => [
+                    apiName,
+                    (query: string, variables?: VariablesType): string => {
+                        const key = `${apiName}-${counter++}`;
+                        promises.push({ key, caller: client[apiName], query, variables });
+                        return key;
+                    },
+                ],
+            ),
         ) as MassClientInterface['enqueue'],
     };
 }

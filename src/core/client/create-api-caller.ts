@@ -83,6 +83,11 @@ export const authenticationHeaders = (config: ClientConfiguration): Record<strin
             Cookie: 'connect.sid=' + config.sessionId,
         };
     }
+    if (config.bearerToken) {
+        return {
+            Authorization: `Bearer ${config.bearerToken}`,
+        };
+    }
     if (config.staticAuthToken) {
         return {
             'X-Crystallize-Static-Auth-Token': config.staticAuthToken,

@@ -10,6 +10,7 @@ export type ClientInterface = {
     discoveryApi: ApiCaller;
     pimApi: ApiCaller;
     nextPimApi: ApiCaller;
+    meApi: ApiCaller;
     shopCartApi: ApiCaller;
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
     close: () => void;
@@ -22,6 +23,7 @@ export type ClientConfiguration = {
     accessTokenSecret?: string;
     staticAuthToken?: string;
     sessionId?: string;
+    bearerToken?: string;
     shopApiToken?: string;
     shopApiStaging?: boolean;
     origin?: string;
@@ -78,7 +80,7 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
     });
 
     // let's rewrite the configuration based on the need of the endpoint
-    // authenticationHeaders manages this priority: sessionId > staticAuthToken > accessTokenId/accessTokenSecret
+    // authenticationHeaders manages this priority: sessionId > bearerToken > staticAuthToken > accessTokenId/accessTokenSecret
     const commonConfig: ClientConfiguration = {
         tenantIdentifier: configuration.tenantIdentifier,
         tenantId: configuration.tenantId,
@@ -89,6 +91,7 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
     const pimConfig: ClientConfiguration = {
         ...commonConfig,
         sessionId: configuration.sessionId,
+        bearerToken: configuration.bearerToken,
         accessTokenId: configuration.accessTokenId,
         accessTokenSecret: configuration.accessTokenSecret,
     };
@@ -96,15 +99,26 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
     // sessionId is excluded
     const catalogConfig: ClientConfiguration = {
         ...commonConfig,
+        bearerToken: configuration.bearerToken,
         staticAuthToken: configuration.staticAuthToken,
         accessTokenId: configuration.accessTokenId,
         accessTokenSecret: configuration.accessTokenSecret,
     };
 
-    // nothing expect static auth token
+    // static auth token and bearer token only
     const discoveryConfig: ClientConfiguration = {
         ...commonConfig,
+        bearerToken: configuration.bearerToken,
         staticAuthToken: configuration.staticAuthToken,
+    };
+
+    // me is like core next in terms of supported headers
+    const meConfig: ClientConfiguration = {
+        ...commonConfig,
+        sessionId: configuration.sessionId,
+        bearerToken: configuration.bearerToken,
+        accessTokenId: configuration.accessTokenId,
+        accessTokenSecret: configuration.accessTokenSecret,
     };
 
     return {
@@ -117,6 +131,7 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
         ),
         pimApi: createApiCaller(grab, apiHost(configuration)(['graphql'], 'pim'), pimConfig, options),
         nextPimApi: createApiCaller(grab, apiHost(configuration)([`@${identifier}`]), pimConfig, options),
+        meApi: createApiCaller(grab, apiHost(configuration)(['@me']), meConfig, options),
         shopCartApi: createShopApiCaller(grab, configuration, options),
         config: {
             tenantId: configuration.tenantId,

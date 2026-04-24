@@ -7,6 +7,7 @@ import {
 } from '../../src/core/client/create-api-caller.js';
 import type { Grab, GrabResponse } from '../../src/core/client/create-grabber.js';
 import { mockGrabResponse, defaultConfig } from './helpers.js';
+import { ClientConfiguration } from '../../src/core/client/create-client.js';
 
 const mockGrab = (response: GrabResponse): Grab['grab'] => {
     return vi.fn().mockResolvedValue(response);
@@ -30,6 +31,37 @@ describe('authenticationHeaders', () => {
             staticAuthToken: 'static-tok',
         });
         expect(headers).toEqual({ Cookie: 'connect.sid=sess123' });
+    });
+
+    test('returns bearer token when set (and no sessionId)', () => {
+        const headers = authenticationHeaders({ ...defaultConfig, bearerToken: 'bearer-tok' });
+        expect(headers).toEqual({ Authorization: 'Bearer bearer-tok' });
+    });
+
+    test('sessionId takes priority over bearerToken', () => {
+        const headers = authenticationHeaders({
+            ...defaultConfig,
+            sessionId: 'sess123',
+            bearerToken: 'bearer-tok',
+        });
+        expect(headers).toEqual({ Cookie: 'connect.sid=sess123' });
+    });
+
+    test('bearerToken takes priority over staticAuthToken', () => {
+        const headers = authenticationHeaders({
+            ...defaultConfig,
+            bearerToken: 'bearer-tok',
+            staticAuthToken: 'static-tok',
+        });
+        expect(headers).toEqual({ Authorization: 'Bearer bearer-tok' });
+    });
+
+    test('bearerToken takes priority over accessTokenId/Secret', () => {
+        const headers = authenticationHeaders({
+            ...defaultConfig,
+            bearerToken: 'bearer-tok',
+        });
+        expect(headers).toEqual({ Authorization: 'Bearer bearer-tok' });
     });
 
     test('returns access token headers when no session or static token', () => {

@@ -42,7 +42,7 @@ api.close();
 
 ## Quick summary
 
-- One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `shopCartApi`
+- One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `meApi`, `shopCartApi`
 - High-level helpers: `createCatalogueFetcher`, `createNavigationFetcher`, `createProductHydrater`, `createOrderFetcher`, `createOrderManager`, `createCustomerManager`, `createCustomerGroupManager`, `createSubscriptionContractManager`, `createCartManager`
 - Utilities: `createSignatureVerifier`, `createPluginPayloadDecrypter`, `createBinaryFileManager`, `pricesForUsageOnTier`, request `profiling`
 - Build GraphQL with objects using `json-to-graphql-query` (see section below)
@@ -57,6 +57,7 @@ api.close();
     - `tenantIdentifier` (required)
     - `tenantId` optional
     - `accessTokenId` / `accessTokenSecret` or `sessionId`
+    - `bearerToken` for backend-issued Bearer tokens (sent as `Authorization: Bearer …`)
     - `staticAuthToken` for read-only catalogue/discovery
     - `shopApiToken` optional; otherwise auto-fetched
     - `shopApiStaging` to use the staging Shop API
@@ -77,6 +78,7 @@ api.close();
 - `discoveryApi` – Discovery GraphQL (replaces the old Search API)
 - `pimApi` – PIM GraphQL (classic /graphql soon legacy)
 - `nextPimApi` – PIM Next GraphQL (scoped to tenant)
+- `meApi` – Me GraphQL (`/@me`, authenticated-user scoped)
 - `shopCartApi` – Shop Cart GraphQL (token handled for you)
 
 All callers share the same signature: `<T>(query: string, variables?: Record<string, unknown>) => Promise<T>`.
@@ -87,7 +89,10 @@ Pass the relevant credentials to `createClient`:
 
 - `staticAuthToken` for catalogue/discovery read-only
 - `accessTokenId` + `accessTokenSecret` (or `sessionId`) for PIM/Shop operations
+- `bearerToken` for backend-issued tokens — sent as `Authorization: Bearer …`; accepted by `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, and `meApi`. Also used automatically to fetch the Shop API token when no other credentials are provided.
 - `shopApiToken` optional; if omitted, a token will be fetched using your PIM credentials on first cart call
+
+Authentication priority (per caller, highest first): `sessionId` → `bearerToken` → `staticAuthToken` → `accessTokenId`/`accessTokenSecret`.
 
 See the official docs for auth: https://crystallize.com/learn/developer-guides/api-overview/authentication
 

@@ -2,6 +2,18 @@
 
 ## From v6
 
+### New: `bearerToken` authentication and `meApi` caller
+
+`ClientConfiguration` now accepts an optional `bearerToken`. When set, it is sent as `Authorization: Bearer <token>` on `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, and the new `meApi` (backed by `/@me`). Priority is `sessionId > bearerToken > staticAuthToken > accessTokenId/accessTokenSecret`. The shop token bootstrap reuses the same priority, so providing a `bearerToken` is enough to auto-fetch a shop API token.
+
+```ts
+const api = createClient({
+    tenantIdentifier: 'furniture',
+    bearerToken: 'eyJhbGciOi…',
+});
+const me = await api.meApi(`query { me { id } }`);
+```
+
 ### `createSignatureVerifier` no longer takes `jwtVerify` / `sha256` (breaking)
 
 `jose` is now a direct dependency of the client, and `createSignatureVerifier` uses it internally together with the platform's `crypto.subtle` for SHA-256 hashing. You no longer need to (and cannot) pass your own `jwtVerify` or `sha256` implementations.
