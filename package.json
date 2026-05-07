@@ -36,7 +36,7 @@
         "vitest": "^4.1.5"
     },
     "dependencies": {
-        "@crystallize/schema": "workspace:*",
+        "@crystallize/schema": "^6.12.0",
         "jose": "^6.2.3",
         "json-to-graphql-query": "^2.3.0",
         "mime-lite": "^1.0.3",
