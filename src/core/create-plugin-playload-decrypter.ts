@@ -6,11 +6,13 @@ import {
     decodeProtectedHeader,
     importJWK,
     jwtVerify,
+    type CryptoKey,
     type JSONWebKeySet,
     type JWK,
     type JWTPayload,
-    type KeyLike,
 } from 'jose';
+
+type PrivateKey = CryptoKey | Uint8Array;
 
 const ALLOWED_ALG = new Set(['RSA-OAEP', 'RSA-OAEP-256']);
 const ALLOWED_ENC = new Set(['A128GCM', 'A192GCM', 'A256GCM']);
@@ -56,24 +58,68 @@ export type SignatureStatus = {
     algorithm?: string;
 };
 
+export type CrystallizeBackendToken = JWTPayload & {
+    act?: {
+        pluginIdentifier?: string;
+        tenantId?: string;
+        installationId?: string;
+        revisionId?: string;
+        [key: string]: unknown;
+    };
+};
+
 export type BackendTokenStatus = {
     verified: boolean;
     skipped?: boolean;
     reason?: string;
-    claims?: Record<string, unknown>;
+    claims?: CrystallizeBackendToken;
 };
 
-export type DecryptedPluginPayload = {
+/**
+ * The decoded plugin payload — the JWT claims emitted by Crystallize Core
+ * once the outer JWE has been decrypted and the inner JWS has been parsed.
+ *
+ * Two protocol variants share this shape:
+ * - Webhook payloads carry `event` (e.g. `"install"`, `"uninstall"`).
+ * - Iframe payloads carry `entityContext` instead of `event`.
+ * The two are mutually exclusive at the protocol level; the type leaves both
+ * optional so a single decoder can return either.
+ *
+ * `TConfiguration` lets callers narrow the plugin-specific `configuration`
+ * blob; it defaults to `Record<string, unknown>`.
+ */
+export type CrystallizePluginPayload<TConfiguration = Record<string, unknown>> = JWTPayload & {
+    tenantId: string;
+    tenantIdentifier: string;
+    installationId: string;
+    pluginIdentifier: string;
+    revisionId: string;
+    configuration: TConfiguration;
+    encryptedSecrets: Record<string, string>;
+    backendToken: string;
+    /** Present for plugins that receive Crystallize webhooks. */
+    signatureSecret?: string;
+    /** Present for plugins that expose a Discovery endpoint. */
+    staticAuthToken?: string;
+    /** Webhook variant: lifecycle event name (e.g. `"install"`). */
+    event?: string;
+    /** Iframe variant: contextual entity payload from Crystallize. */
+    entityContext?: unknown;
+};
+
+export type DecryptedPluginPayload<TConfiguration = Record<string, unknown>> = {
     protectedHeader: Record<string, unknown>;
     innerProtectedHeader: Record<string, unknown> | null;
     plaintext: string | null;
-    envelope: Record<string, unknown> | null;
+    envelope: CrystallizePluginPayload<TConfiguration> | null;
     secrets: Record<string, string>;
-    signature: SignatureStatus;
-    backendToken: BackendTokenStatus | null;
+    signatureStatus: SignatureStatus;
+    backendTokenStatus: BackendTokenStatus | null;
 };
 
-export type PluginPayloadDecrypter = (payload: string) => Promise<DecryptedPluginPayload>;
+export type PluginPayloadDecrypter<TConfiguration = Record<string, unknown>> = (
+    payload: string,
+) => Promise<DecryptedPluginPayload<TConfiguration>>;
 
 const looksLikeCompactJwe = (value: string): boolean => typeof value === 'string' && value.split('.').length === 5;
 const looksLikeCompactJws = (value: string): boolean => typeof value === 'string' && value.split('.').length === 3;
@@ -112,14 +158,14 @@ type JwksGetter = Parameters<typeof jwtVerify>[1];
  * const decoded = await decrypt(jweCompact);
  * ```
  */
-export const createPluginPayloadDecrypter = ({
+export const createPluginPayloadDecrypter = <TConfiguration = Record<string, unknown>>({
     privateJwk,
     verify,
-}: CreatePluginPayloadDecrypterOptions): PluginPayloadDecrypter => {
-    let privateKeyPromise: Promise<KeyLike> | null = null;
-    const getPrivateKey = (): Promise<KeyLike> => {
+}: CreatePluginPayloadDecrypterOptions): PluginPayloadDecrypter<TConfiguration> => {
+    let privateKeyPromise: Promise<PrivateKey> | null = null;
+    const getPrivateKey = (): Promise<PrivateKey> => {
         if (!privateKeyPromise) {
-            privateKeyPromise = importJWK(privateJwk, (privateJwk.alg as string) ?? 'RSA-OAEP-256') as Promise<KeyLike>;
+            privateKeyPromise = importJWK(privateJwk, (privateJwk.alg as string) ?? 'RSA-OAEP-256');
         }
         return privateKeyPromise;
     };
@@ -148,7 +194,7 @@ export const createPluginPayloadDecrypter = ({
             })
           : null;
 
-    return async (payload: string): Promise<DecryptedPluginPayload> => {
+    return async (payload: string): Promise<DecryptedPluginPayload<TConfiguration>> => {
         const privateKey = await getPrivateKey();
 
         const { plaintext: outerBytes, protectedHeader } = await compactDecrypt(payload, privateKey);
@@ -167,7 +213,7 @@ export const createPluginPayloadDecrypter = ({
 
         let envelopeClaims: JWTPayload | null = null;
         let innerProtectedHeader: Record<string, unknown> | null = null;
-        const signature: SignatureStatus = { verified: false };
+        const signatureStatus: SignatureStatus = { verified: false };
 
         if (protectedHeader.cty === 'JWT' && looksLikeCompactJws(outerPlaintext)) {
             try {
@@ -179,8 +225,8 @@ export const createPluginPayloadDecrypter = ({
 
         if (protectedHeader.cty === 'JWT' && looksLikeCompactJws(outerPlaintext)) {
             if (resolvedVerify && jwks) {
-                signature.issuer = resolvedVerify.issuer;
-                signature.audience = resolvedVerify.audience;
+                signatureStatus.issuer = resolvedVerify.issuer;
+                signatureStatus.audience = resolvedVerify.audience;
                 try {
                     const { payload: claims, protectedHeader: jwsHeader } = await jwtVerify(outerPlaintext, jwks, {
                         issuer: resolvedVerify.issuer,
@@ -189,21 +235,21 @@ export const createPluginPayloadDecrypter = ({
                         clockTolerance: resolvedVerify.clockTolerance ?? 30,
                     });
                     envelopeClaims = claims;
-                    signature.verified = true;
-                    signature.algorithm = String(jwsHeader.alg ?? 'RS256');
+                    signatureStatus.verified = true;
+                    signatureStatus.algorithm = String(jwsHeader.alg ?? 'RS256');
                 } catch (error) {
                     envelopeClaims = decodeJwt(outerPlaintext);
-                    signature.verified = false;
-                    signature.reason = error instanceof Error ? error.message : String(error);
+                    signatureStatus.verified = false;
+                    signatureStatus.reason = error instanceof Error ? error.message : String(error);
                 }
             } else {
                 envelopeClaims = decodeJwt(outerPlaintext);
-                signature.skipped = true;
-                signature.reason = 'no verify options provided; inner JWS signature NOT verified';
+                signatureStatus.skipped = true;
+                signatureStatus.reason = 'no verify options provided; inner JWS signature NOT verified';
             }
         } else {
-            signature.skipped = true;
-            signature.reason =
+            signatureStatus.skipped = true;
+            signatureStatus.reason =
                 protectedHeader.cty === 'JWT'
                     ? 'cty=JWT but outer plaintext is not a compact JWS'
                     : `outer JWE is not a nested JWT (cty=${JSON.stringify(protectedHeader.cty)})`;
@@ -219,9 +265,9 @@ export const createPluginPayloadDecrypter = ({
             secrets[field] = new TextDecoder().decode(secretBytes);
         }
 
-        let backendToken: BackendTokenStatus | null = null;
+        let backendTokenStatus: BackendTokenStatus | null = null;
         if (envelopeClaims && typeof envelopeClaims.backendToken === 'string') {
-            backendToken = { verified: false };
+            backendTokenStatus = { verified: false };
             if (resolvedVerify?.verifyBackendToken && jwks) {
                 try {
                     const { payload: tokenClaims } = await jwtVerify(envelopeClaims.backendToken, jwks, {
@@ -230,23 +276,23 @@ export const createPluginPayloadDecrypter = ({
                         algorithms: ['RS256'],
                         clockTolerance: resolvedVerify.clockTolerance ?? 30,
                     });
-                    backendToken.verified = true;
-                    backendToken.claims = tokenClaims as Record<string, unknown>;
+                    backendTokenStatus.verified = true;
+                    backendTokenStatus.claims = tokenClaims as CrystallizeBackendToken;
                 } catch (error) {
-                    backendToken.reason = error instanceof Error ? error.message : String(error);
+                    backendTokenStatus.reason = error instanceof Error ? error.message : String(error);
                     try {
-                        backendToken.claims = decodeJwt(envelopeClaims.backendToken) as Record<string, unknown>;
+                        backendTokenStatus.claims = decodeJwt(envelopeClaims.backendToken) as CrystallizeBackendToken;
                     } catch {
                         // give up silently — we already have reason set
                     }
                 }
             } else {
-                backendToken.skipped = true;
-                backendToken.reason = resolvedVerify
+                backendTokenStatus.skipped = true;
+                backendTokenStatus.reason = resolvedVerify
                     ? 'backend token signature check disabled (pass verify.verifyBackendToken to enable)'
                     : 'no verify options provided; backend token signature NOT verified';
                 try {
-                    backendToken.claims = decodeJwt(envelopeClaims.backendToken) as Record<string, unknown>;
+                    backendTokenStatus.claims = decodeJwt(envelopeClaims.backendToken) as CrystallizeBackendToken;
                 } catch {
                     // leave claims undefined
                 }
@@ -257,10 +303,10 @@ export const createPluginPayloadDecrypter = ({
             protectedHeader: protectedHeader as Record<string, unknown>,
             innerProtectedHeader,
             plaintext: envelopeClaims ? null : outerPlaintext,
-            envelope: envelopeClaims as Record<string, unknown> | null,
+            envelope: envelopeClaims as CrystallizePluginPayload<TConfiguration> | null,
             secrets,
-            signature,
-            backendToken,
+            signatureStatus,
+            backendTokenStatus,
         };
     };
 };

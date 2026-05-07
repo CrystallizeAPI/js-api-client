@@ -5,9 +5,9 @@ import {
     exportJWK,
     generateKeyPair,
     importJWK,
+    type CryptoKey,
     type JSONWebKeySet,
     type JWK,
-    type KeyLike,
 } from 'jose';
 import { createPluginPayloadDecrypter } from '../src';
 
@@ -32,7 +32,7 @@ const encryptBytesForVendor = async (publicJwk: JWK, plaintext: Uint8Array, cty?
 type Issuer = {
     jwks: JSONWebKeySet;
     issuer: string;
-    signer: KeyLike;
+    signer: CryptoKey;
     kid: string;
 };
 
@@ -42,7 +42,7 @@ const makeJwksIssuer = async (issuerOverride?: string): Promise<Issuer> => {
     return {
         jwks: { keys: [publicJwk] },
         issuer: issuerOverride ?? 'https://api.crystallize.example',
-        signer: privateKey as KeyLike,
+        signer: privateKey,
         kid: 'core-sign-1',
     };
 };
@@ -124,10 +124,10 @@ describe('createPluginPayloadDecrypter', () => {
         expect(out.protectedHeader.enc).toBe('A256GCM');
         expect(out.plaintext).toBe('hello');
         expect(out.envelope).toBeNull();
-        expect(out.signature.verified).toBe(false);
-        expect(out.signature.skipped).toBe(true);
+        expect(out.signatureStatus.verified).toBe(false);
+        expect(out.signatureStatus.skipped).toBe(true);
         expect(out.secrets).toEqual({});
-        expect(out.backendToken).toBeNull();
+        expect(out.backendTokenStatus).toBeNull();
     });
 
     test('full protocol: decrypts envelope, verifies inner JWS, and decrypts per-field secrets', async () => {
@@ -149,7 +149,7 @@ describe('createPluginPayloadDecrypter', () => {
         const out = await decrypt(jwe);
 
         expect(out.protectedHeader.cty).toBe('JWT');
-        expect(out.signature).toEqual({
+        expect(out.signatureStatus).toEqual({
             verified: true,
             issuer: issuer.issuer,
             audience,
@@ -177,8 +177,8 @@ describe('createPluginPayloadDecrypter', () => {
         const decrypt = createPluginPayloadDecrypter({ privateJwk });
         const out = await decrypt(jwe);
 
-        expect(out.signature.verified).toBe(false);
-        expect(out.signature.skipped).toBe(true);
+        expect(out.signatureStatus.verified).toBe(false);
+        expect(out.signatureStatus.skipped).toBe(true);
         expect(out.envelope?.aud).toBe('com.vendor.test');
         expect(out.secrets).toEqual({ ApiKey: 'sk_abc' });
     });
@@ -199,9 +199,9 @@ describe('createPluginPayloadDecrypter', () => {
         });
         const out = await decrypt(jwe);
 
-        expect(out.signature.verified).toBe(false);
-        expect(out.signature.skipped).toBeUndefined();
-        expect(typeof out.signature.reason).toBe('string');
+        expect(out.signatureStatus.verified).toBe(false);
+        expect(out.signatureStatus.skipped).toBeUndefined();
+        expect(typeof out.signatureStatus.reason).toBe('string');
         expect(out.envelope?.aud).toBe('com.vendor.test');
         expect(out.secrets).toEqual({ ApiKey: 'sk_abc' });
     });
@@ -214,7 +214,14 @@ describe('createPluginPayloadDecrypter', () => {
             vendorPublic: publicJwk,
             issuer,
             audience,
-            backendTokenExtras: { act: { pluginIdentifier: audience, installationId: 'inst-1', revisionId: 'rev-1' } },
+            backendTokenExtras: {
+                act: {
+                    pluginIdentifier: audience,
+                    tenantId: 'tenant-id-123',
+                    installationId: 'inst-1',
+                    revisionId: 'rev-1',
+                },
+            },
         });
 
         const decrypt = createPluginPayloadDecrypter({
@@ -223,13 +230,38 @@ describe('createPluginPayloadDecrypter', () => {
         });
         const out = await decrypt(jwe);
 
-        expect(out.backendToken?.verified).toBe(true);
-        expect(out.backendToken?.claims?.iss).toBe(issuer.issuer);
-        expect(out.backendToken?.claims?.act).toEqual({
+        expect(out.backendTokenStatus?.verified).toBe(true);
+        expect(out.backendTokenStatus?.claims?.iss).toBe(issuer.issuer);
+        expect(out.backendTokenStatus?.claims?.act).toEqual({
             pluginIdentifier: audience,
+            tenantId: 'tenant-id-123',
             installationId: 'inst-1',
             revisionId: 'rev-1',
         });
+        expect(out.backendTokenStatus?.claims?.act?.tenantId).toBe('tenant-id-123');
+    });
+
+    test('webhook variant: envelope carries `event` field', async () => {
+        const { publicJwk, privateJwk } = await generateVendorKeys();
+        const issuer = await makeJwksIssuer();
+        const audience = 'com.vendor.test';
+        const jwe = await buildProtocolPayload({
+            vendorPublic: publicJwk,
+            issuer,
+            audience,
+            envelopeExtras: { event: 'install', tenantId: 'tenant-id-123' },
+        });
+
+        const decrypt = createPluginPayloadDecrypter({
+            privateJwk,
+            verify: { jwks: issuer.jwks, issuer: issuer.issuer, audience },
+        });
+        const out = await decrypt(jwe);
+
+        expect(out.signatureStatus.verified).toBe(true);
+        expect(out.envelope?.event).toBe('install');
+        expect(out.envelope?.tenantId).toBe('tenant-id-123');
+        expect(out.envelope?.entityContext).toBeUndefined();
     });
 
     test('backend token is decoded (not verified) when verifyBackendToken is not set', async () => {
@@ -249,9 +281,9 @@ describe('createPluginPayloadDecrypter', () => {
         });
         const out = await decrypt(jwe);
 
-        expect(out.backendToken?.verified).toBe(false);
-        expect(out.backendToken?.skipped).toBe(true);
-        expect(out.backendToken?.claims?.iss).toBe(issuer.issuer);
+        expect(out.backendTokenStatus?.verified).toBe(false);
+        expect(out.backendTokenStatus?.skipped).toBe(true);
+        expect(out.backendTokenStatus?.claims?.iss).toBe(issuer.issuer);
     });
 
     test('decryption with the wrong vendor key throws', async () => {
@@ -308,8 +340,8 @@ describe('createPluginPayloadDecrypter', () => {
         });
         const out = await decrypt(jwe);
 
-        expect(out.signature.verified).toBe(true);
-        expect(out.signature.issuer).toBe('https://api.crystallize.com');
+        expect(out.signatureStatus.verified).toBe(true);
+        expect(out.signatureStatus.issuer).toBe('https://api.crystallize.com');
         expect(out.envelope?.iss).toBe('https://api.crystallize.com');
     });
 
@@ -339,8 +371,8 @@ describe('createPluginPayloadDecrypter', () => {
         });
 
         const [outA, outB] = await Promise.all([decrypt(a), decrypt(b)]);
-        expect(outA.signature.verified).toBe(true);
-        expect(outB.signature.verified).toBe(true);
+        expect(outA.signatureStatus.verified).toBe(true);
+        expect(outB.signatureStatus.verified).toBe(true);
         expect(outA.secrets.K).toBe('v1');
         expect(outB.secrets.K).toBe('v2');
     });
