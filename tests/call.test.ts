@@ -53,10 +53,10 @@ test('callDiscoApi: Raw fetch ', async () => {
 
     const caller = CrystallizeClient.discoveryApi;
 
-    const query = `query { 
+    const query = `query {
         browse {
             product(
-                path:"/products/coffee/guadalupe-collective"      
+                path:"/products/outdoor-furniture/palissade-cone-table"
             ) {
                 hits {
                     path
@@ -68,5 +68,5 @@ test('callDiscoApi: Raw fetch ', async () => {
     }`;
     const response = await caller<{ browse: { product: { hits: { path: string }[] } } }>(query);
 
-    expect(response.browse.product.hits[0].path).toBe('/products/coffee/guadalupe-collective');
+    expect(response.browse.product.hits[0].path).toBe('/products/outdoor-furniture/palissade-cone-table');
 });
