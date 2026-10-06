@@ -2,6 +2,12 @@
 
 ## From v6
 
+### New: Shop API `/order`, `/customer` and `/lock` (7.5.0)
+
+`ClientInterface` gains `shopOrderApi`, `shopCustomerApi`, `shopLockApi`, `shopSubscriptionContractApi` and `shopBookingApi`, with the `createShopOrderManager`, `createShopCustomerManager` and `createShopLock` helpers. Nothing changes for `createClient` users, but if you build a `ClientInterface` object yourself (e.g. a typed test mock), add the new callers.
+
+All the Shop API callers of a client now share one token: it is requested with `shopApiToken.scopes` (default `['cart']`) and refetched with the union of the scopes when a caller needs another endpoint.
+
 ### New: `bearerToken` authentication and `meApi` caller
 
 `ClientConfiguration` now accepts an optional `bearerToken`. When set, it is sent as `Authorization: Bearer <token>` on `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, and the new `meApi` (backed by `/@me`). Priority is `sessionId > bearerToken > staticAuthToken > accessTokenId/accessTokenSecret`. The shop token bootstrap reuses the same priority, so providing a `bearerToken` is enough to auto-fetch a shop API token.

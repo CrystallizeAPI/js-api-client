@@ -3,7 +3,7 @@ import { createGrabber } from './create-grabber.js';
 import { ProfilingOptions } from './profiling.js';
 
 import { ApiCaller } from './create-api-caller.js';
-import { createShopApiCaller } from './shop-api-caller.js';
+import { createShopApiCaller, createShopApiTokenManager } from './shop-api-caller.js';
 
 export type ClientInterface = {
     catalogueApi: ApiCaller;
@@ -12,6 +12,11 @@ export type ClientInterface = {
     nextPimApi: ApiCaller;
     meApi: ApiCaller;
     shopCartApi: ApiCaller;
+    shopOrderApi: ApiCaller;
+    shopLockApi: ApiCaller;
+    shopCustomerApi: ApiCaller;
+    shopSubscriptionContractApi: ApiCaller;
+    shopBookingApi: ApiCaller;
     config: Pick<ClientConfiguration, 'tenantIdentifier' | 'tenantId' | 'origin'>;
     close: () => void;
     [Symbol.dispose]: () => void;
@@ -55,7 +60,7 @@ export const apiHost = (configuration: ClientConfiguration) => {
 };
 
 /**
- * Creates a Crystallize API client that provides access to catalogue, discovery, PIM, and shop cart APIs.
+ * Creates a Crystallize API client that provides access to catalogue, discovery, PIM, and Shop APIs.
  * Use this as the main entry point for all interactions with the Crystallize APIs.
  *
  * @param configuration - The tenant configuration including identifier and authentication credentials.
@@ -121,6 +126,9 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
         accessTokenSecret: configuration.accessTokenSecret,
     };
 
+    // one Shop API token for all the shop callers, widened to the scopes they need
+    const shopApiTokenManager = createShopApiTokenManager(grab, configuration, options);
+
     return {
         catalogueApi: createApiCaller(grab, apiHost(configuration)([identifier, 'catalogue']), catalogConfig, options),
         discoveryApi: createApiCaller(
@@ -132,7 +140,18 @@ export const createClient = (configuration: ClientConfiguration, options?: Creat
         pimApi: createApiCaller(grab, apiHost(configuration)(['graphql'], 'pim'), pimConfig, options),
         nextPimApi: createApiCaller(grab, apiHost(configuration)([`@${identifier}`]), pimConfig, options),
         meApi: createApiCaller(grab, apiHost(configuration)(['@me']), meConfig, options),
-        shopCartApi: createShopApiCaller(grab, configuration, options),
+        shopCartApi: createShopApiCaller(grab, configuration, options, 'cart', shopApiTokenManager),
+        shopOrderApi: createShopApiCaller(grab, configuration, options, 'order', shopApiTokenManager),
+        shopLockApi: createShopApiCaller(grab, configuration, options, 'lock', shopApiTokenManager),
+        shopCustomerApi: createShopApiCaller(grab, configuration, options, 'customer', shopApiTokenManager),
+        shopSubscriptionContractApi: createShopApiCaller(
+            grab,
+            configuration,
+            options,
+            'subscription-contract',
+            shopApiTokenManager,
+        ),
+        shopBookingApi: createShopApiCaller(grab, configuration, options, 'booking', shopApiTokenManager),
         config: {
             tenantId: configuration.tenantId,
             tenantIdentifier: configuration.tenantIdentifier,

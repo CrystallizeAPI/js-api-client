@@ -42,8 +42,8 @@ api.close();
 
 ## Quick summary
 
-- One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `meApi`, `shopCartApi`
-- High-level helpers: `createCatalogueFetcher`, `createNavigationFetcher`, `createProductHydrater`, `createOrderFetcher`, `createOrderManager`, `createCustomerManager`, `createCustomerGroupManager`, `createSubscriptionContractManager`, `createCartManager`
+- One client with callers: `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, `meApi`, and the Shop API callers `shopCartApi`, `shopOrderApi`, `shopCustomerApi`, `shopLockApi`, `shopSubscriptionContractApi`, `shopBookingApi`
+- High-level helpers: `createCatalogueFetcher`, `createNavigationFetcher`, `createProductHydrater`, `createOrderFetcher`, `createOrderManager`, `createCustomerManager`, `createCustomerGroupManager`, `createSubscriptionContractManager`, `createCartManager`, `createShopOrderManager`, `createShopCustomerManager`, `createShopLock`
 - Utilities: `createSignatureVerifier`, `createPluginPayloadDecrypter`, `createBinaryFileManager`, `pricesForUsageOnTier`, request `profiling`
 - Build GraphQL with objects using `json-to-graphql-query` (see section below)
 - Strong typing via `@crystallize/schema` inputs and outputs
@@ -68,7 +68,7 @@ api.close();
     - `http2IdleTimeout` HTTP/2 idle timeout in milliseconds (default `300000` — 5 minutes). Use a shorter value for serverless functions, a longer one for long-running servers
     - `profiling` callbacks
     - `extraHeaders` extra request headers for all calls
-    - `shopApiToken` controls auto-fetch: `{ doNotFetch?: boolean; scopes?: string[]; expiresIn?: number }`
+    - `shopApiToken` controls auto-fetch: `{ doNotFetch?: boolean; scopes?: string[]; expiresIn?: number }`. `scopes` defaults to `['cart']`; pass every endpoint you use (e.g. `['cart', 'order']`) to get a single token up front, otherwise the token is refetched with the extra scope the first time another Shop API endpoint is called
 
 `client.close()` should be called when you enable HTTP/2 to gracefully close the underlying session.
 
@@ -79,7 +79,10 @@ api.close();
 - `pimApi` – PIM GraphQL (classic /graphql soon legacy)
 - `nextPimApi` – PIM Next GraphQL (scoped to tenant)
 - `meApi` – Me GraphQL (`/@me`, authenticated-user scoped)
-- `shopCartApi` – Shop Cart GraphQL (token handled for you)
+- `shopCartApi` – Shop API `/cart` GraphQL (token handled for you)
+- `shopOrderApi`, `shopCustomerApi`, `shopLockApi`, `shopSubscriptionContractApi`, `shopBookingApi` – the other Shop API endpoints (`/order`, `/customer`, `/lock`, `/subscription-contract`, `/booking`)
+
+All the Shop API callers of a client share one token. It is refreshed 5 minutes before it expires, and refetched with the union of the scopes when a caller needs an endpoint the cached token doesn't cover.
 
 All callers share the same signature: `<T>(query: string, variables?: Record<string, unknown>) => Promise<T>`.
 
@@ -90,7 +93,7 @@ Pass the relevant credentials to `createClient`:
 - `staticAuthToken` for catalogue/discovery read-only
 - `accessTokenId` + `accessTokenSecret` (or `sessionId`) for PIM/Shop operations
 - `bearerToken` for backend-issued tokens — sent as `Authorization: Bearer …`; accepted by `catalogueApi`, `discoveryApi`, `pimApi`, `nextPimApi`, and `meApi`. Also used automatically to fetch the Shop API token when no other credentials are provided.
-- `shopApiToken` optional; if omitted, a token will be fetched using your PIM credentials on first cart call
+- `shopApiToken` optional; if omitted, a token will be fetched using your PIM credentials on the first Shop API call
 
 Authentication priority (per caller, highest first): `sessionId` → `bearerToken` → `staticAuthToken` → `accessTokenId`/`accessTokenSecret`.
 
@@ -335,6 +338,65 @@ await cart.setMeta(hydrated.id, { merge: true, meta: [{ key: 'source', value: 'w
 await cart.abandon(hydrated.id);
 await cart.place(hydrated.id);
 await cart.fulfill(hydrated.id, orderId);
+```
+
+### Shop API orders
+
+`createShopOrderManager` talks to the Shop API `/order` endpoint: turn a cart into an order at checkout, record payments and move the order through pipelines. (`createOrderManager` above targets the Core API.) Inputs are validated with the schemas from `@crystallize/schema/shop`, and every method returns the order `id` plus the fields you select.
+
+```typescript
+import { createShopOrderManager } from '@crystallize/js-api-client';
+import type { Order } from '@crystallize/schema/shop';
+
+const orders = createShopOrderManager(api);
+
+const order = await orders.createFromCart(cartId, {
+    type: 'standard',
+    paymentStatus: 'paid',
+    payments: [{ provider: 'stripe', transactionId: 'pi_123', amount: 100, method: 'card' }],
+    pipelines: [{ identifier: 'fulfilment', stage: 'new' }],
+});
+
+await orders.addPayments(order.id, [{ provider: 'gift-card', amount: 20, meta: [{ key: 'code', value: 'XMAS' }] }]);
+await orders.setPayments(order.id, [{ provider: 'stripe', amount: 120 }]); // replaces all payments
+await orders.setMeta(order.id, { meta: [{ key: 'source', value: 'web' }] }); // merge: true by default
+await orders.setCustomer(order.id, { isGuest: false, identifier: 'customer-123', type: 'individual', addresses: [] });
+await orders.addToStage(order.id, 'fulfilment', 'shipped');
+await orders.removeFromPipeline(order.id, 'fulfilment');
+
+const fetched = await orders.fetch<Order>(order.id, { reference: true, payments: { provider: true, meta: true } });
+const history = await orders.listByCustomer('customer-123', { limit: 10, skip: 0 }, { reference: true });
+```
+
+- `payments` accept any `provider` string: they are a record of what happened, nothing is charged.
+- `payments[].meta` is written as a `[{ key, value }]` list but read back as a JSON object (`{ code: 'XMAS' }`).
+- `createFromCart`, `addPayments` and `setPayments` persist the order just after responding: a read issued immediately after can still return the previous state.
+- `fetch` rejects with a `JSApiClientCallError` when the order does not exist.
+
+### Shop API customers and locks
+
+```typescript
+import { createShopCustomerManager, createShopLock } from '@crystallize/js-api-client';
+
+// `/customer`: customers keyed by identifier
+const customers = createShopCustomerManager(api);
+await customers.upsert({ identifier: 'customer-123', email: 'john@doe.com', firstName: 'John' }); // create or update
+await customers.addAddress('customer-123', { type: 'delivery', street: 'Main St 1', city: 'Oslo' });
+await customers.setAddress('customer-123', 0, { type: 'delivery', street: 'Main St 2', city: 'Oslo' });
+await customers.removeAddress('customer-123', 0);
+await customers.setMeta('customer-123', { meta: [{ key: 'tier', value: 'gold' }] });
+const customer = await customers.fetch('customer-123', { email: true, addresses: { city: true } });
+
+// `/lock`: a distributed lock, e.g. so a webhook and a redirect don't both create the order
+const lock = createShopLock(api);
+if (await lock.acquire(`cart-${cartId}`, 30)) {
+    // ttl in seconds, defaults to 60; resolves false when the lock is already held
+    try {
+        // …createFromCart
+    } finally {
+        await lock.release(`cart-${cartId}`);
+    }
+}
 ```
 
 ## Signature verification

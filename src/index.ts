@@ -5,6 +5,7 @@ export {
     CreateClientOptions,
 } from './core/client/create-client.js';
 export { JSApiClientCallError } from './core/client/create-api-caller.js';
+export { ShopApiEndpoint } from './core/client/shop-api-caller.js';
 export { ProfilingOptions } from './core/client/profiling.js';
 
 // Catalogue
@@ -23,6 +24,9 @@ export * from './core/pim/subscriptions/create-subscription-contract-manager.js'
 
 // Shop
 export * from './core/shop/create-cart-manager.js';
+export * from './core/shop/create-shop-order-manager.js';
+export * from './core/shop/create-shop-customer-manager.js';
+export * from './core/shop/create-shop-lock.js';
 
 // Others
 export * from './core/pricing.js';
